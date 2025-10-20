@@ -1,0 +1,1938 @@
+package com.laulem.vectopath;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class VectoPathApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
+spring:
+  application:
+    name: VectoPath
+
+  # Configuration de la base de données PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/vecto_path
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  # Configuration Spring AI
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo}
+      embedding:
+        model: text-embedding-3-small
+        options:
+          model: text-embedding-3-small
+
+    # Configuration Spring AI Vector Store
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+        max-document-batch-size: 10000
+
+# Configuration du serveur
+server:
+  port: 8080
+
+# Configuration JSON
+spring.jackson:
+  serialization:
+    write-dates-as-timestamps: false
+  time-zone: UTC
+
+# Configuration des logs
+logging:
+  level:
+    com.laulem.vectopath: INFO
+    org.springframework.ai: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Configuration des logs
+logging.level.com.laulem.vectopath=INFO
+logging.level.org.springframework.ai=DEBUG
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+package com.laulem.vectopath;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class VectoPathApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(VectoPathApplication.class, args);
+    }
+
+}
+package com.laulem.vectopath.infra.repository;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.repository.VectorRepository;
+import org.postgresql.util.PGobject;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.PreparedStatement;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ * Adaptateur d'infrastructure implémentant le port VectorRepository
+ * Architecture hexagonale respectée
+ */
+@Repository
+public class VectorStoreRepository implements VectorRepository {
+
+    private static final Logger logger = LoggerFactory.getLogger(VectorStoreRepository.class);
+
+    private final VectorStore vectorStore;
+    private final JdbcTemplate jdbcTemplate;
+    private final EmbeddingModel embeddingModel;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
+
+    public VectorStoreRepository(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
+        this.vectorStore = vectorStore;
+        this.jdbcTemplate = jdbcTemplate;
+        this.embeddingModel = embeddingModel;
+    }
+
+    public void addResource(Resource resource) {
+        logger.info("Ajout de la ressource [{}] dans le vector store", resource.getName());
+
+        try {
+            Document rawDoc = new Document(resource.getContent());
+            List<Document> splitDocs = tokenTextSplitter.apply(List.of(rawDoc));
+
+            List<Document> taggedDocs = splitDocs.stream()
+                    .map(doc -> new Document(doc.getText(), Map.of(
+                            "resource_id", resource.getId().toString(),
+                            "resource_name", resource.getName(),
+                            "content_type", resource.getContentType(),
+                            "status", resource.getStatus().name(),
+                            "chunk_type", "content"
+                    )))
+                    .collect(Collectors.toList());
+
+            vectorStore.add(taggedDocs);
+            logger.info("[{}] Chargé {} documents", resource.getName(), taggedDocs.size());
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de l'ajout de la ressource [{}]", resource.getName(), e);
+            throw new RuntimeException("Erreur lors de l'ajout de la ressource", e);
+        }
+    }
+
+    public List<DocumentChunk> searchSimilar(String query, int limit) {
+        try {
+            float[] vector = embeddingModel.embed(query);
+
+            PGobject pgVector = new PGobject();
+            pgVector.setType("vector");
+            StringBuilder vectorStr = new StringBuilder("[");
+            for (int i = 0; i < vector.length; i++) {
+                if (i > 0) vectorStr.append(",");
+                vectorStr.append(vector[i]);
+            }
+            pgVector.setValue(vectorStr.append("]").toString());
+
+            String sql = "SELECT id, content, metadata FROM vector_store WHERE metadata->>'chunk_type' = 'content' ORDER BY embedding <=> ? LIMIT ?";
+
+            return jdbcTemplate.query(
+                    conn -> {
+                        PreparedStatement ps = conn.prepareStatement(sql);
+                        ps.setObject(1, pgVector);
+                        ps.setInt(2, limit);
+                        return ps;
+                    },
+                    (rs, rowNum) -> convertToDocumentChunk(
+                            rs.getString("id"),
+                            rs.getString("content"),
+                            parseMetadata(rs.getString("metadata"))
+                    )
+            );
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la recherche sémantique", e);
+            return List.of();
+        }
+    }
+
+    public List<DocumentChunk> getChunksByResourceId(UUID resourceId) {
+        String sql = "SELECT id, content, metadata FROM vector_store WHERE metadata->>'resource_id' = ? AND metadata->>'chunk_type' = 'content' ORDER BY id";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> convertToDocumentChunk(
+                rs.getString("id"),
+                rs.getString("content"),
+                parseMetadata(rs.getString("metadata"))
+        ), resourceId.toString());
+    }
+
+    public void deleteResource(UUID resourceId) {
+        try {
+            String sql = "SELECT id FROM vector_store WHERE metadata->>'resource_id' = ?";
+            List<String> documentIds = jdbcTemplate.queryForList(sql, String.class, resourceId.toString());
+
+            if (!documentIds.isEmpty()) {
+                vectorStore.delete(documentIds);
+                logger.info("Supprimé {} documents pour la ressource {}", documentIds.size(), resourceId);
+            }
+        } catch (Exception e) {
+            logger.error("Erreur lors de la suppression de la ressource : {}", resourceId, e);
+        }
+    }
+
+    public boolean isResourceAlreadyLoaded(UUID resourceId) {
+        try {
+            String sql = "SELECT COUNT(*) FROM vector_store WHERE metadata->>'resource_id' = ? AND metadata->>'chunk_type' = 'marker'";
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, resourceId.toString());
+            return count != null && count > 0;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la vérification : {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private Map<String, Object> parseMetadata(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
+    private DocumentChunk convertToDocumentChunk(String id, String content, Map<String, Object> metadata) {
+        DocumentChunk chunk = new DocumentChunk();
+
+        try {
+            chunk.setId(UUID.fromString(id));
+        } catch (Exception e) {
+            chunk.setId(UUID.randomUUID());
+        }
+
+        chunk.setResourceId(UUID.fromString(metadata.get("resource_id").toString()));
+        chunk.setContent(content);
+        chunk.setCreatedAt(LocalDateTime.now());
+
+        chunk.setMetadata(String.format(
+                "{\"resourceId\":\"%s\",\"resourceName\":\"%s\",\"contentType\":\"%s\",\"status\":\"%s\"}",
+                metadata.get("resource_id"),
+                metadata.get("resource_name"),
+                metadata.get("content_type"),
+                metadata.get("status")
+        ));
+
+        return chunk;
+    }
+}
+package com.laulem.vectopath.infra.repository;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.ResourceStatus;
+import com.laulem.vectopath.business.repository.ResourceRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Implémentation PostgreSQL du repository des ressources
+ */
+@Repository
+public class PostgreSQLResourceRepository implements ResourceRepository {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public PostgreSQLResourceRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public Resource save(Resource resource) {
+        if (existsById(resource.getId())) {
+            return update(resource);
+        } else {
+            return insert(resource);
+        }
+    }
+
+    @Override
+    public Optional<Resource> findById(UUID id) {
+        String sql = "SELECT * FROM resources WHERE id = ?";
+        List<Resource> results = jdbcTemplate.query(sql, new ResourceRowMapper(), id);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
+
+    @Override
+    public List<Resource> findAll() {
+        String sql = "SELECT * FROM resources ORDER BY created_at DESC";
+        return jdbcTemplate.query(sql, new ResourceRowMapper());
+    }
+
+    @Override
+    public List<Resource> findByStatus(ResourceStatus status) {
+        String sql = "SELECT * FROM resources WHERE status = ? ORDER BY created_at DESC";
+        return jdbcTemplate.query(sql, new ResourceRowMapper(), status.name());
+    }
+
+    @Override
+    public List<Resource> findByNameContaining(String name) {
+        String sql = "SELECT * FROM resources WHERE name ILIKE ? ORDER BY created_at DESC";
+        return jdbcTemplate.query(sql, new ResourceRowMapper(), "%" + name + "%");
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        String sql = "DELETE FROM resources WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+        String sql = "SELECT COUNT(*) FROM resources WHERE id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    private Resource insert(Resource resource) {
+        String sql = "INSERT INTO resources (id, name, content, content_type, status, metadata, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?::json, ?, ?)";
+
+        jdbcTemplate.update(sql,
+                resource.getId(),
+                resource.getName(),
+                resource.getContent(),
+                resource.getContentType(),
+                resource.getStatus().name(),
+                resource.getMetadata(),
+                Timestamp.valueOf(resource.getCreatedAt()),
+                Timestamp.valueOf(resource.getUpdatedAt())
+        );
+
+        return resource;
+    }
+
+    private Resource update(Resource resource) {
+        String sql = "UPDATE resources SET name = ?, content = ?, content_type = ?, status = ?, " +
+                    "metadata = ?::json, updated_at = ? WHERE id = ?";
+
+        jdbcTemplate.update(sql,
+                resource.getName(),
+                resource.getContent(),
+                resource.getContentType(),
+                resource.getStatus().name(),
+                resource.getMetadata(),
+                Timestamp.valueOf(resource.getUpdatedAt()),
+                resource.getId()
+        );
+
+        return resource;
+    }
+
+    private static class ResourceRowMapper implements RowMapper<Resource> {
+        @Override
+        public Resource mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Resource resource = new Resource();
+            resource.setId((UUID) rs.getObject("id"));
+            resource.setName(rs.getString("name"));
+            resource.setContent(rs.getString("content"));
+            resource.setContentType(rs.getString("content_type"));
+            resource.setStatus(ResourceStatus.valueOf(rs.getString("status")));
+            resource.setMetadata(rs.getString("metadata"));
+
+            Timestamp createdAt = rs.getTimestamp("created_at");
+            if (createdAt != null) {
+                resource.setCreatedAt(createdAt.toLocalDateTime());
+            }
+
+            Timestamp updatedAt = rs.getTimestamp("updated_at");
+            if (updatedAt != null) {
+                resource.setUpdatedAt(updatedAt.toLocalDateTime());
+            }
+
+            return resource;
+        }
+    }
+}
+package com.laulem.vectopath.business.repository;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.DocumentChunk;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Port (interface) pour la gestion vectorielle des ressources
+ * Respecte l'architecture hexagonale : business ne dépend pas d'infra
+ */
+public interface VectorRepository {
+
+    void addResource(Resource resource);
+
+    List<DocumentChunk> searchSimilar(String query, int limit);
+
+    List<DocumentChunk> getChunksByResourceId(UUID resourceId);
+
+    void deleteResource(UUID resourceId);
+
+    boolean isResourceAlreadyLoaded(UUID resourceId);
+}
+package com.laulem.vectopath.business.repository;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.ResourceStatus;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Port pour la gestion des ressources
+ */
+public interface ResourceRepository {
+
+    /**
+     * Sauvegarde une ressource
+     */
+    Resource save(Resource resource);
+
+    /**
+     * Recherche une ressource par son ID
+     */
+    Optional<Resource> findById(UUID id);
+
+    /**
+     * Recherche toutes les ressources
+     */
+    List<Resource> findAll();
+
+    /**
+     * Recherche les ressources par statut
+     */
+    List<Resource> findByStatus(ResourceStatus status);
+
+    /**
+     * Recherche les ressources par nom (recherche partielle)
+     */
+    List<Resource> findByNameContaining(String name);
+
+    /**
+     * Supprime une ressource
+     */
+    void deleteById(UUID id);
+
+    /**
+     * Vérifie si une ressource existe
+     */
+    boolean existsById(UUID id);
+}
+package com.laulem.vectopath.business.model;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * Modèle de domaine représentant un chunk vectorisé d'une ressource
+ */
+public class DocumentChunk {
+    private UUID id;
+    private UUID resourceId;
+    private String content;
+    private String metadata;
+    private LocalDateTime createdAt;
+
+    public DocumentChunk() {
+        this.id = UUID.randomUUID();
+        this.createdAt = LocalDateTime.now();
+    }
+
+    // Getters et Setters
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(UUID resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}
+package com.laulem.vectopath.business.model;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * Modèle de domaine représentant une ressource à vectoriser
+ */
+public class Resource {
+    private UUID id;
+    private String name;
+    private String content;
+    private String contentType;
+    private ResourceStatus status;
+    private String metadata;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    public Resource() {
+        this.id = UUID.randomUUID();
+        this.status = ResourceStatus.PENDING;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public Resource(String name, String content, String contentType) {
+        this();
+        this.name = name;
+        this.content = content;
+        this.contentType = contentType;
+    }
+
+    // Getters et Setters
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public ResourceStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ResourceStatus status) {
+        this.status = status;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}
+package com.laulem.vectopath.business.model;
+
+/**
+ * Énumération des statuts possibles pour une ressource
+ */
+public enum ResourceStatus {
+    PENDING,        // En attente de traitement
+    PROCESSING,     // En cours de traitement/vectorisation
+    VECTORIZED,     // Vectorisée avec succès
+    ERROR          // Erreur lors du traitement
+}
+package com.laulem.vectopath.business.service.impl;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.ResourceStatus;
+import com.laulem.vectopath.business.repository.ResourceRepository;
+import com.laulem.vectopath.business.service.ResourceService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Implémentation du service de gestion des ressources
+ */
+@Service
+public class ResourceServiceImpl implements ResourceService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceServiceImpl.class);
+
+    private final ResourceRepository resourceRepository;
+    private final VectorizedResourceService vectorizedResourceService;
+
+    public ResourceServiceImpl(ResourceRepository resourceRepository,
+                              VectorizedResourceService vectorizedResourceService) {
+        this.resourceRepository = resourceRepository;
+        this.vectorizedResourceService = vectorizedResourceService;
+    }
+
+    @Override
+    public Resource createResource(String name, String content, String contentType, String metadata) {
+        logger.info("Création d'une nouvelle ressource : {}", name);
+
+        Resource resource = new Resource(name, content, contentType);
+        resource.setMetadata(metadata);
+
+        // Sauvegarde la ressource
+        resource = resourceRepository.save(resource);
+
+        // Lance la vectorisation de manière asynchrone
+        processResourceVectorization(resource);
+
+        return resource;
+    }
+
+    @Override
+    public Optional<Resource> getResourceById(UUID id) {
+        return resourceRepository.findById(id);
+    }
+
+    @Override
+    public List<Resource> getAllResources() {
+        return resourceRepository.findAll();
+    }
+
+    @Override
+    public List<Resource> getResourcesByStatus(ResourceStatus status) {
+        return resourceRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<Resource> searchResourcesByName(String name) {
+        return resourceRepository.findByNameContaining(name);
+    }
+
+    @Override
+    public Resource updateResourceStatus(UUID id, ResourceStatus status) {
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ressource non trouvée : " + id));
+
+        resource.setStatus(status);
+        return resourceRepository.save(resource);
+    }
+
+    @Override
+    public void deleteResource(UUID id) {
+        logger.info("Suppression de la ressource : {}", id);
+
+        // Supprime d'abord tous les chunks vectorisés
+        vectorizedResourceService.deleteResource(id);
+
+        // Puis supprime la ressource des métadonnées
+        resourceRepository.deleteById(id);
+    }
+
+    @Override
+    public Resource reprocessResource(UUID id) {
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ressource non trouvée : " + id));
+
+        logger.info("Relance du traitement de la ressource : {}", resource.getName());
+
+        // Supprime les anciens chunks vectorisés
+        vectorizedResourceService.deleteResource(id);
+
+        // Relance la vectorisation
+        processResourceVectorization(resource);
+
+        return resource;
+    }
+
+    /**
+     * Traite la vectorisation d'une ressource avec VectorizedResourceService
+     * Basé sur l'approche de RagConfig et CustomVectorStoreWithAccessControl
+     */
+    private void processResourceVectorization(Resource resource) {
+        try {
+            logger.info("Début de la vectorisation de la ressource : {}", resource.getName());
+
+            // Met à jour le statut
+            resource.setStatus(ResourceStatus.PROCESSING);
+            resourceRepository.save(resource);
+
+            // Vérifier si la ressource est déjà chargée (comme dans RagConfig)
+            if (vectorizedResourceService.isResourceAlreadyLoaded(resource.getId())) {
+                logger.info("Ressource [{}] déjà chargée dans le vector store", resource.getName());
+                resource.setStatus(ResourceStatus.VECTORIZED);
+                resourceRepository.save(resource);
+                return;
+            }
+
+            // Utiliser VectorizedResourceService pour le découpage, la vectorisation et le stockage
+            // (basé sur TokenTextSplitter de RagConfig + approche CustomVectorStoreWithAccessControl)
+            vectorizedResourceService.addResource(resource);
+
+            // Met à jour le statut de succès
+            resource.setStatus(ResourceStatus.VECTORIZED);
+            resourceRepository.save(resource);
+
+            logger.info("Vectorisation terminée avec succès pour la ressource : {}", resource.getName());
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la vectorisation de la ressource : {}", resource.getName(), e);
+
+            // Met à jour le statut d'erreur
+            resource.setStatus(ResourceStatus.ERROR);
+            resourceRepository.save(resource);
+        }
+    }
+
+
+}
+package com.laulem.vectopath.business.service.impl;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.service.ContentDownloadService;
+import com.laulem.vectopath.business.service.ResourceService;
+import com.laulem.vectopath.business.service.UrlResourceCreationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.Map;
+
+/**
+ * Implémentation du service de création de ressources depuis une URL
+ */
+@Service
+public class UrlResourceCreationServiceImpl implements UrlResourceCreationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UrlResourceCreationServiceImpl.class);
+
+    private final ResourceService resourceService;
+    private final ContentDownloadService contentDownloadService;
+
+    public UrlResourceCreationServiceImpl(ResourceService resourceService, ContentDownloadService contentDownloadService) {
+        this.resourceService = resourceService;
+        this.contentDownloadService = contentDownloadService;
+    }
+
+    @Override
+    public Resource createFromUrl(String name, String url, String metadata) {
+        validateInput(name, url);
+        logger.info("Création d'une ressource depuis l'URL : {}", url);
+
+        try {
+            String content = contentDownloadService.downloadContent(url.trim());
+
+            return resourceService.createResource(
+                name.trim(),
+                content,
+                "text/plain",
+                metadata
+            );
+        } catch (IOException e) {
+            logger.error("Erreur lors du téléchargement depuis l'URL : {}", url, e);
+            throw new RuntimeException("Impossible de télécharger le contenu depuis l'URL : " + url, e);
+        }
+    }
+
+
+    private void validateInput(String name, String url) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom de la ressource est obligatoire");
+        }
+        if (url == null || url.trim().isEmpty()) {
+            throw new IllegalArgumentException("L'URL est obligatoire pour une ressource de type URL");
+        }
+    }
+}
+package com.laulem.vectopath.business.service.impl;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.repository.VectorRepository;
+import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Service métier simplifié pour la gestion vectorielle des ressources
+ * Architecture hexagonale respectée : utilise le port VectorRepository
+ */
+@Service
+public class VectorizedResourceService {
+
+    private static final Logger logger = LoggerFactory.getLogger(VectorizedResourceService.class);
+
+    private final VectorRepository vectorRepository;
+
+    public VectorizedResourceService(VectorRepository vectorRepository) {
+        this.vectorRepository = vectorRepository;
+    }
+
+    /**
+     * Ajoute une ressource au vector store
+     */
+    public void addResource(Resource resource) {
+        logger.info("Demande d'ajout de la ressource [{}]", resource.getName());
+        vectorRepository.addResource(resource);
+    }
+
+    /**
+     * Recherche sémantique
+     */
+    public List<DocumentChunk> searchSimilar(String query, int limit) {
+        logger.info("Recherche sémantique pour : {}", query);
+        return vectorRepository.searchSimilar(query, limit);
+    }
+
+    /**
+     * Supprime une ressource du vector store
+     */
+    public void deleteResource(UUID resourceId) {
+        logger.info("Demande de suppression de la ressource : {}", resourceId);
+        vectorRepository.deleteResource(resourceId);
+    }
+
+    /**
+     * Vérifie si une ressource est déjà chargée
+     */
+    public boolean isResourceAlreadyLoaded(UUID resourceId) {
+        return vectorRepository.isResourceAlreadyLoaded(resourceId);
+    }
+}
+
+
+package com.laulem.vectopath.business.service.impl;
+
+import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.service.DocumentChunkService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * Implémentation du service de gestion des chunks de documents
+ * Basée sur VectorizedResourceService (RagConfig + CustomVectorStoreWithAccessControl)
+ */
+@Service
+public class DocumentChunkServiceImpl implements DocumentChunkService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DocumentChunkServiceImpl.class);
+
+    private final VectorizedResourceService vectorizedResourceService;
+
+    public DocumentChunkServiceImpl(VectorizedResourceService vectorizedResourceService) {
+        this.vectorizedResourceService = vectorizedResourceService;
+    }
+
+    @Override
+    public List<DocumentChunk> searchSimilarChunks(String query, int limit) {
+        logger.info("Recherche de chunks similaires pour la requête : {}", query);
+
+        // Utiliser VectorizedResourceService qui gère automatiquement la vectorisation
+        // (basé sur CustomVectorStoreWithAccessControl avec EmbeddingModel + PGobject)
+        return vectorizedResourceService.searchSimilar(query, limit);
+    }
+}
+package com.laulem.vectopath.business.service.impl;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.service.FileResourceCreationService;
+import com.laulem.vectopath.business.service.ResourceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+
+/**
+ * Implémentation du service de création de ressources depuis un fichier
+ */
+@Service
+public class FileResourceCreationServiceImpl implements FileResourceCreationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileResourceCreationServiceImpl.class);
+
+    private final ResourceService resourceService;
+
+    public FileResourceCreationServiceImpl(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
+
+    @Override
+    public Resource createFromFileContent(String name, byte[] fileContent, String originalFilename, String metadata) {
+        validateInput(name, fileContent, originalFilename);
+        logger.info("Création d'une ressource depuis le fichier : {}", originalFilename);
+
+        try {
+            String content = new String(fileContent, "UTF-8");
+
+            return resourceService.createResource(
+                name.trim(),
+                content,
+                "text/plain",
+                metadata
+            );
+        } catch (Exception e) {
+            logger.error("Erreur lors de la lecture du fichier : {}", originalFilename, e);
+            throw new RuntimeException("Impossible de lire le contenu du fichier", e);
+        }
+    }
+
+
+    private void validateInput(String name, byte[] fileContent, String originalFilename) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom de la ressource est obligatoire");
+        }
+        if (fileContent == null || fileContent.length == 0) {
+            throw new IllegalArgumentException("Le fichier est obligatoire pour une ressource de type FILE");
+        }
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".txt")) {
+            throw new IllegalArgumentException("Seuls les fichiers .txt sont acceptés");
+        }
+    }
+}
+package com.laulem.vectopath.business.service.impl;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.service.ResourceService;
+import com.laulem.vectopath.business.service.TextResourceCreationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+
+/**
+ * Implémentation du service de création de ressources depuis du texte
+ */
+@Service
+public class TextResourceCreationServiceImpl implements TextResourceCreationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TextResourceCreationServiceImpl.class);
+
+    private final ResourceService resourceService;
+
+    public TextResourceCreationServiceImpl(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
+
+    @Override
+    public Resource createFromText(String name, String content, String contentType, String metadata) {
+        validateInput(name, content);
+        logger.info("Création d'une ressource depuis du texte direct : {}", name);
+
+        return resourceService.createResource(
+            name.trim(),
+            content,
+            contentType != null ? contentType : "text/plain",
+            metadata
+        );
+    }
+
+    private void validateInput(String name, String content) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom de la ressource est obligatoire");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le contenu est obligatoire pour une ressource de type TEXT");
+        }
+    }
+}
+package com.laulem.vectopath.business.service;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.ResourceStatus;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Interface du service de gestion des ressources
+ */
+public interface ResourceService {
+
+    /**
+     * Crée une nouvelle ressource et lance sa vectorisation
+     */
+    Resource createResource(String name, String content, String contentType, String metadata);
+
+    /**
+     * Récupère une ressource par son ID
+     */
+    Optional<Resource> getResourceById(UUID id);
+
+    /**
+     * Récupère toutes les ressources
+     */
+    List<Resource> getAllResources();
+
+    /**
+     * Récupère les ressources par statut
+     */
+    List<Resource> getResourcesByStatus(ResourceStatus status);
+
+    /**
+     * Recherche des ressources par nom
+     */
+    List<Resource> searchResourcesByName(String name);
+
+    /**
+     * Met à jour le statut d'une ressource
+     */
+    Resource updateResourceStatus(UUID id, ResourceStatus status);
+
+    /**
+     * Supprime une ressource et ses chunks associés
+     */
+    void deleteResource(UUID id);
+
+    /**
+     * Relance la vectorisation d'une ressource
+     */
+    Resource reprocessResource(UUID id);
+}
+package com.laulem.vectopath.business.service;
+
+import com.laulem.vectopath.business.model.Resource;
+
+import java.util.Map;
+
+/**
+ * Interface pour la création de ressources depuis du texte
+ */
+public interface TextResourceCreationService {
+
+    /**
+     * Crée une ressource depuis du contenu textuel
+     */
+    Resource createFromText(String name, String content, String contentType, String metadata);
+}
+package com.laulem.vectopath.business.service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
+/**
+ * Service pour télécharger du contenu depuis des URLs
+ */
+@Service
+public class ContentDownloadService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ContentDownloadService.class);
+
+    private final HttpClient httpClient;
+
+    public ContentDownloadService() {
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
+    }
+
+    /**
+     * Télécharge le contenu depuis une URL
+     * @param url L'URL à télécharger
+     * @return Le contenu sous forme de String
+     * @throws IOException Si une erreur survient lors du téléchargement
+     */
+    public String downloadContent(String url) throws IOException {
+        logger.info("Téléchargement du contenu depuis l'URL : {}", url);
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(60))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                logger.info("Contenu téléchargé avec succès depuis : {}", url);
+                return response.body();
+            } else {
+                throw new IOException("Erreur HTTP " + response.statusCode() + " lors du téléchargement de " + url);
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Téléchargement interrompu pour " + url, e);
+        } catch (Exception e) {
+            logger.error("Erreur lors du téléchargement depuis l'URL : {}", url, e);
+            throw new IOException("Erreur lors du téléchargement depuis " + url, e);
+        }
+    }
+}
+package com.laulem.vectopath.business.service;
+
+import com.laulem.vectopath.business.model.Resource;
+
+import java.util.Map;
+
+/**
+ * Interface pour la création de ressources depuis un fichier
+ */
+public interface FileResourceCreationService {
+
+    /**
+     * Crée une ressource depuis le contenu d'un fichier
+     */
+    Resource createFromFileContent(String name, byte[] fileContent, String originalFilename, String metadata);
+}
+package com.laulem.vectopath.business.service;
+
+import com.laulem.vectopath.business.model.Resource;
+
+import java.util.Map;
+
+/**
+ * Interface pour la création de ressources depuis une URL
+ */
+public interface UrlResourceCreationService {
+
+    /**
+     * Crée une ressource depuis une URL
+     */
+    Resource createFromUrl(String name, String url, String metadata);
+}
+package com.laulem.vectopath.business.service;
+
+import com.laulem.vectopath.business.model.DocumentChunk;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Interface du service de gestion des chunks de documents
+ */
+public interface DocumentChunkService {
+
+    /**
+     * Recherche des chunks similaires à partir d'un texte de requête
+     */
+    List<DocumentChunk> searchSimilarChunks(String query, int limit);
+}
+package com.laulem.vectopath.client.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * DTO pour la création d'une nouvelle ressource
+ * Peut accepter du contenu direct, une URL ou être utilisé avec un fichier
+ */
+public class CreateResourceRequest {
+
+    public enum SourceType {
+        TEXT,    // Contenu textuel direct
+        URL,     // URL à télécharger
+        FILE     // Fichier uploadé (géré par le contrôleur)
+    }
+
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("content")
+    private String content;
+
+    @JsonProperty("url")
+    private String url;
+
+    @JsonProperty("source_type")
+    private SourceType sourceType;
+
+    @JsonProperty("content_type")
+    private String contentType;
+
+    @JsonProperty("metadata")
+    private String metadata;
+
+    public CreateResourceRequest() {}
+
+    public CreateResourceRequest(String name, String content, String contentType, String metadata) {
+        this.name = name;
+        this.content = content;
+        this.contentType = contentType;
+        this.metadata = metadata;
+        this.sourceType = SourceType.TEXT;
+    }
+
+    // Getters et Setters
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public SourceType getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(SourceType sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+}
+package com.laulem.vectopath.client.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.ResourceStatus;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * DTO pour la réponse contenant les informations d'une ressource
+ */
+public class ResourceResponse {
+
+    @JsonProperty("id")
+    private UUID id;
+
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("content_type")
+    private String contentType;
+
+    @JsonProperty("status")
+    private ResourceStatus status;
+
+    @JsonProperty("metadata")
+    private String metadata;
+
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
+
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
+
+    @JsonProperty("content_preview")
+    private String contentPreview;
+
+    public ResourceResponse() {}
+
+    public ResourceResponse(Resource resource) {
+        this.id = resource.getId();
+        this.name = resource.getName();
+        this.contentType = resource.getContentType();
+        this.status = resource.getStatus();
+        this.metadata = resource.getMetadata();
+        this.createdAt = resource.getCreatedAt();
+        this.updatedAt = resource.getUpdatedAt();
+
+        // Créer un aperçu du contenu (100 premiers caractères)
+        if (resource.getContent() != null) {
+            this.contentPreview = resource.getContent().length() > 100
+                ? resource.getContent().substring(0, 100) + "..."
+                : resource.getContent();
+        }
+    }
+
+    // Getters et Setters
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public ResourceStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ResourceStatus status) {
+        this.status = status;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getContentPreview() {
+        return contentPreview;
+    }
+
+    public void setContentPreview(String contentPreview) {
+        this.contentPreview = contentPreview;
+    }
+}
+package com.laulem.vectopath.client.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.laulem.vectopath.business.model.DocumentChunk;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * DTO pour les réponses de recherche de chunks de documents
+ */
+public class DocumentChunkResponse {
+
+    @JsonProperty("id")
+    private UUID id;
+
+    @JsonProperty("resource_id")
+    private UUID resourceId;
+
+    @JsonProperty("content")
+    private String content;
+
+    @JsonProperty("metadata")
+    private String metadata;
+
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
+
+    public DocumentChunkResponse() {}
+
+    public DocumentChunkResponse(DocumentChunk chunk) {
+        this.id = chunk.getId();
+        this.resourceId = chunk.getResourceId();
+        this.content = chunk.getContent();
+        this.metadata = chunk.getMetadata();
+        this.createdAt = chunk.getCreatedAt();
+    }
+
+    // Getters et Setters
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(UUID resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}
+package com.laulem.vectopath.client.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * DTO pour les requêtes de recherche
+ */
+public class SearchRequest {
+
+    @JsonProperty("query")
+    private String query;
+
+    @JsonProperty("limit")
+    private int limit = 10;
+
+    public SearchRequest() {}
+
+    public SearchRequest(String query, int limit) {
+        this.query = query;
+        this.limit = limit;
+    }
+
+    // Getters et Setters
+    public String getQuery() {
+        return query;
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+}
+package com.laulem.vectopath.client.controller;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.model.ResourceStatus;
+import com.laulem.vectopath.business.service.ResourceService;
+import com.laulem.vectopath.client.dto.CreateResourceRequest;
+import com.laulem.vectopath.client.dto.ResourceResponse;
+import com.laulem.vectopath.client.service.ResourceCreationOrchestrator;
+import com.laulem.vectopath.client.service.ResourceRequestAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ * Contrôleur REST pour la gestion des ressources
+ */
+@RestController
+@RequestMapping("/api/v1/resources")
+@CrossOrigin(origins = "*")
+public class ResourceController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
+
+    private final ResourceService resourceService;
+    private final ResourceCreationOrchestrator resourceCreationOrchestrator;
+    private final ResourceRequestAdapter resourceRequestAdapter;
+
+    public ResourceController(ResourceService resourceService,
+                              ResourceCreationOrchestrator resourceCreationOrchestrator,
+                              ResourceRequestAdapter resourceRequestAdapter) {
+        this.resourceService = resourceService;
+        this.resourceCreationOrchestrator = resourceCreationOrchestrator;
+        this.resourceRequestAdapter = resourceRequestAdapter;
+    }
+
+    /**
+     * Crée une nouvelle ressource depuis du contenu JSON
+     */
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<ResourceResponse> createResourceFromJson(@RequestBody CreateResourceRequest request) {
+        try {
+            logger.info("Création d'une nouvelle ressource de type {} : {}", request.getSourceType(), request.getName());
+
+            // Valeur par défaut si sourceType n'est pas spécifié (rétrocompatibilité)
+            if (request.getSourceType() == null) {
+                request.setSourceType(CreateResourceRequest.SourceType.TEXT);
+            }
+
+            Resource resource = resourceCreationOrchestrator.createResource(request, null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ResourceResponse(resource));
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("Requête invalide : {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            logger.error("Erreur lors de la création de la ressource", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            logger.error("Erreur lors de la création de la ressource", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Crée une nouvelle ressource depuis un fichier multipart
+     */
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<ResourceResponse> createResourceFromFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "metadata", required = false) String metadata) {
+        try {
+            logger.info("Création d'une ressource depuis un fichier : {}", file.getOriginalFilename());
+
+            CreateResourceRequest request = new CreateResourceRequest();
+            request.setSourceType(CreateResourceRequest.SourceType.FILE);
+            request.setName(name != null ? name : file.getOriginalFilename());
+            request.setMetadata(metadata);
+
+            Resource resource = resourceCreationOrchestrator.createResource(request, file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ResourceResponse(resource));
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("Requête invalide : {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            logger.error("Erreur lors de la création de la ressource", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            logger.error("Erreur lors de la création de la ressource", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Récupère toutes les ressources
+     */
+    @GetMapping
+    public ResponseEntity<List<ResourceResponse>> getAllResources() {
+        logger.info("Récupération de toutes les ressources");
+
+        try {
+            List<Resource> resources = resourceService.getAllResources();
+            List<ResourceResponse> responses = resources.stream()
+                    .map(ResourceResponse::new)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(responses);
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération des ressources", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Récupère une ressource par son ID
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ResourceResponse> getResourceById(@PathVariable UUID id) {
+        logger.info("Récupération de la ressource : {}", id);
+
+        try {
+            Optional<Resource> resource = resourceService.getResourceById(id);
+
+            if (resource.isPresent()) {
+                return ResponseEntity.ok(new ResourceResponse(resource.get()));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de la ressource : {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Recherche des ressources par nom
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<ResourceResponse>> searchResourcesByName(@RequestParam String name) {
+        logger.info("Recherche des ressources par nom : {}", name);
+
+        try {
+            List<Resource> resources = resourceService.searchResourcesByName(name);
+            List<ResourceResponse> responses = resources.stream()
+                    .map(ResourceResponse::new)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(responses);
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la recherche par nom : {}", name, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Récupère les ressources par statut
+     */
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<ResourceResponse>> getResourcesByStatus(@PathVariable ResourceStatus status) {
+        logger.info("Récupération des ressources par statut : {}", status);
+
+        try {
+            List<Resource> resources = resourceService.getResourcesByStatus(status);
+            List<ResourceResponse> responses = resources.stream()
+                    .map(ResourceResponse::new)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(responses);
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération par statut : {}", status, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Relance le traitement d'une ressource
+     */
+    @PostMapping("/{id}/reprocess")
+    public ResponseEntity<ResourceResponse> reprocessResource(@PathVariable UUID id) {
+        logger.info("Relance du traitement de la ressource : {}", id);
+
+        try {
+            Resource resource = resourceService.reprocessResource(id);
+            return ResponseEntity.ok(new ResourceResponse(resource));
+
+        } catch (RuntimeException e) {
+            logger.error("Ressource non trouvée : {}", id, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Erreur lors du retraitement de la ressource : {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Supprime une ressource
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteResource(@PathVariable UUID id) {
+        logger.info("Suppression de la ressource : {}", id);
+
+        try {
+            resourceService.deleteResource(id);
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la suppression de la ressource : {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+}
+package com.laulem.vectopath.client.controller;
+
+import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.service.DocumentChunkService;
+import com.laulem.vectopath.client.dto.DocumentChunkResponse;
+import com.laulem.vectopath.client.dto.SearchRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ * Contrôleur REST pour la recherche sémantique et la gestion des chunks
+ */
+@RestController
+@RequestMapping("/api/v1/search")
+@CrossOrigin(origins = "*")
+public class SearchController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
+
+    private final DocumentChunkService documentChunkService;
+
+    public SearchController(DocumentChunkService documentChunkService) {
+        this.documentChunkService = documentChunkService;
+    }
+
+    /**
+     * Recherche sémantique dans les chunks vectorisés
+     */
+    @PostMapping("/semantic")
+    public ResponseEntity<List<DocumentChunkResponse>> searchSemantic(@RequestBody SearchRequest request) {
+        logger.info("Recherche sémantique : {}", request.getQuery());
+
+        try {
+            List<DocumentChunk> chunks = documentChunkService.searchSimilarChunks(
+                request.getQuery(),
+                request.getLimit()
+            );
+            List<DocumentChunkResponse> responses = chunks.stream()
+                    .map(DocumentChunkResponse::new)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(responses);
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la recherche sémantique", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+}
+package com.laulem.vectopath.client.service;
+
+import com.laulem.vectopath.client.dto.CreateResourceRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Service léger de la couche client pour parser les requêtes HTTP
+ * et les transformer en appels vers la couche business
+ */
+@Service
+public class ResourceRequestAdapter {
+
+    /**
+     * Adapte une requête multipart en paramètres pour la couche business
+     */
+    public CreateResourceRequest adaptMultipartRequest(MultipartFile file, CreateResourceRequest existingRequest) {
+        CreateResourceRequest request = new CreateResourceRequest();
+        request.setSourceType(CreateResourceRequest.SourceType.FILE);
+
+        // Utilise les données de la requête existante si elles sont fournies
+        if (existingRequest != null) {
+            request.setName(existingRequest.getName());
+            request.setMetadata(existingRequest.getMetadata());
+            request.setContentType(existingRequest.getContentType());
+        }
+
+        // Si pas de nom spécifié, utiliser le nom du fichier
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            request.setName(file.getOriginalFilename());
+        }
+
+        return request;
+    }
+}
+package com.laulem.vectopath.client.service;
+
+import com.laulem.vectopath.business.model.Resource;
+import com.laulem.vectopath.business.service.FileResourceCreationService;
+import com.laulem.vectopath.business.service.TextResourceCreationService;
+import com.laulem.vectopath.business.service.UrlResourceCreationService;
+import com.laulem.vectopath.client.dto.CreateResourceRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
+/**
+ * Service de la couche client pour orchestrer les appels vers les services business
+ * selon le type de source de la ressource
+ */
+@Service
+public class ResourceCreationOrchestrator {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceCreationOrchestrator.class);
+
+    private final TextResourceCreationService textResourceCreationService;
+    private final UrlResourceCreationService urlResourceCreationService;
+    private final FileResourceCreationService fileResourceCreationService;
+
+    public ResourceCreationOrchestrator(
+            TextResourceCreationService textResourceCreationService,
+            UrlResourceCreationService urlResourceCreationService,
+            FileResourceCreationService fileResourceCreationService) {
+        this.textResourceCreationService = textResourceCreationService;
+        this.urlResourceCreationService = urlResourceCreationService;
+        this.fileResourceCreationService = fileResourceCreationService;
+    }
+
+    /**
+     * Orchestre la création d'une ressource selon le type de source
+     */
+    public Resource createResource(CreateResourceRequest request, MultipartFile file) throws IOException {
+        switch (request.getSourceType()) {
+            case TEXT:
+                return textResourceCreationService.createFromText(
+                    request.getName(),
+                    request.getContent(),
+                    request.getContentType(),
+                    request.getMetadata()
+                );
+            case URL:
+                return urlResourceCreationService.createFromUrl(
+                    request.getName(),
+                    request.getUrl(),
+                    request.getMetadata()
+                );
+            case FILE:
+                return fileResourceCreationService.createFromFileContent(
+                    request.getName(),
+                    file.getBytes(),
+                    file.getOriginalFilename(),
+                    request.getMetadata()
+                );
+            default:
+                throw new IllegalArgumentException("Type de source non supporté : " + request.getSourceType());
+        }
+    }
+
+
+}
+
