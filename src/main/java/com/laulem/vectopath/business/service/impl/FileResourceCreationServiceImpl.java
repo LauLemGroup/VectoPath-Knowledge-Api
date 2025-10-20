@@ -9,9 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-/**
- * Implémentation du service de création de ressources depuis un fichier
- */
 @Service
 public class FileResourceCreationServiceImpl implements FileResourceCreationService {
 
@@ -26,27 +23,27 @@ public class FileResourceCreationServiceImpl implements FileResourceCreationServ
     @Override
     public Resource createFromFileContent(String name, byte[] fileContent, String originalFilename, String metadata) {
         validateInput(name, fileContent, originalFilename);
-        logger.info("Création d'une ressource depuis le fichier : {}", originalFilename);
+        logger.info("Creating resource from file: {}", originalFilename);
 
         try {
             String content = new String(fileContent, "UTF-8");
             return resourceService.createResource(name.trim(), content, "text/plain", metadata);
         } catch (Exception e) {
-            logger.error("Erreur lors de la lecture du fichier : {}", originalFilename, e);
-            throw new RuntimeException("Impossible de lire le contenu du fichier", e);
+            logger.error("Error reading file: {}", originalFilename, e);
+            throw new RuntimeException("Unable to read file content", e);
         }
     }
 
 
     private void validateInput(String name, byte[] fileContent, String originalFilename) {
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Le nom de la ressource est obligatoire");
+            throw new IllegalArgumentException("Resource name is required");
         }
         if (fileContent == null || fileContent.length == 0) {
-            throw new IllegalArgumentException("Le fichier est obligatoire pour une ressource de type FILE");
+            throw new IllegalArgumentException("File is required for FILE resource type");
         }
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".txt")) {
-            throw new IllegalArgumentException("Seuls les fichiers .txt sont acceptés");
+            throw new IllegalArgumentException("Only .txt files are accepted");
         }
     }
 }

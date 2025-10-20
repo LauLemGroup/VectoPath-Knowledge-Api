@@ -5,9 +5,6 @@ import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.business.service.TextResourceCreationService;
 import org.springframework.stereotype.Service;
 
-/**
- * Implémentation du service de création de ressources depuis du texte
- */
 @Service
 public class TextResourceCreationServiceImpl implements TextResourceCreationService {
     public static final String CONTENT_TYPE = "text/plain";
@@ -25,10 +22,10 @@ public class TextResourceCreationServiceImpl implements TextResourceCreationServ
 
     private void validateInput(String name, String content) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Le nom de la ressource est obligatoire");
+            throw new IllegalArgumentException("Resource name is required");
         }
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("Le contenu est obligatoire pour une ressource de type TEXT");
+            throw new IllegalArgumentException("Content is required for TEXT resource type");
         }
     }
 }

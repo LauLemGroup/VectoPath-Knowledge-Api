@@ -6,9 +6,6 @@ import com.laulem.vectopath.business.model.DocumentChunk;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * DTO pour les réponses de recherche de chunks de documents
- */
 public class DocumentChunkResponse {
 
     @JsonProperty("id")
@@ -35,8 +32,6 @@ public class DocumentChunkResponse {
         this.metadata = chunk.getMetadata();
         this.createdAt = chunk.getCreatedAt();
     }
-
-    // Getters et Setters
     public UUID getId() {
         return id;
     }

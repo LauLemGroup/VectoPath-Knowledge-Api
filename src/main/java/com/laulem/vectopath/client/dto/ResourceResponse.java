@@ -7,9 +7,6 @@ import com.laulem.vectopath.business.model.ResourceStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * DTO pour la réponse contenant les informations d'une ressource
- */
 public class ResourceResponse {
 
     @JsonProperty("id")
@@ -47,15 +44,12 @@ public class ResourceResponse {
         this.createdAt = resource.getCreatedAt();
         this.updatedAt = resource.getUpdatedAt();
 
-        // Créer un aperçu du contenu (100 premiers caractères)
         if (resource.getContent() != null) {
             this.contentPreview = resource.getContent().length() > 100
                 ? resource.getContent().substring(0, 100) + "..."
                 : resource.getContent();
         }
     }
-
-    // Getters et Setters
     public UUID getId() {
         return id;
     }

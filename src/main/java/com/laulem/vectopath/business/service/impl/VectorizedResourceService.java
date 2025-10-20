@@ -10,10 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Service métier simplifié pour la gestion vectorielle des ressources
- * Architecture hexagonale respectée : utilise le port VectorRepository
- */
 @Service
 public class VectorizedResourceService {
 
@@ -25,33 +21,21 @@ public class VectorizedResourceService {
         this.vectorRepository = vectorRepository;
     }
 
-    /**
-     * Ajoute une ressource au vector store
-     */
     public void addResource(Resource resource) {
-        logger.info("Demande d'ajout de la ressource [{}]", resource.getName());
+        logger.info("Adding resource [{}]", resource.getName());
         vectorRepository.addResource(resource);
     }
 
-    /**
-     * Recherche sémantique
-     */
     public List<DocumentChunk> searchSimilar(String query, int limit) {
-        logger.info("Recherche sémantique pour : {}", query);
+        logger.info("Semantic search for: {}", query);
         return vectorRepository.searchSimilar(query, limit);
     }
 
-    /**
-     * Supprime une ressource du vector store
-     */
     public void deleteResource(UUID resourceId) {
-        logger.info("Demande de suppression de la ressource : {}", resourceId);
+        logger.info("Deleting resource: {}", resourceId);
         vectorRepository.deleteResource(resourceId);
     }
 
-    /**
-     * Vérifie si une ressource est déjà chargée
-     */
     public boolean isResourceAlreadyLoaded(UUID resourceId) {
         return vectorRepository.isResourceAlreadyLoaded(resourceId);
     }

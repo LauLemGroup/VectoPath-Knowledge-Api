@@ -14,9 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Contrôleur REST pour la recherche sémantique et la gestion des chunks
- */
+
 @RestController
 @RequestMapping("/api/v1/search")
 @CrossOrigin(origins = "*")
@@ -30,12 +28,9 @@ public class SearchController {
         this.documentChunkService = documentChunkService;
     }
 
-    /**
-     * Recherche sémantique dans les chunks vectorisés
-     */
     @PostMapping("/semantic")
     public ResponseEntity<List<DocumentChunkResponse>> searchSemantic(@RequestBody SearchRequest request) {
-        logger.info("Recherche sémantique : {}", request.getQuery());
+        logger.info("Semantic search: {}", request.getQuery());
 
         try {
             List<DocumentChunk> chunks = documentChunkService.searchSimilarChunks(
@@ -49,7 +44,7 @@ public class SearchController {
             return ResponseEntity.ok(responses);
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la recherche sémantique", e);
+            logger.error("Error during semantic search", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

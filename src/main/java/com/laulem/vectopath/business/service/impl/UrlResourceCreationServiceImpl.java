@@ -11,9 +11,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * Implémentation du service de création de ressources depuis une URL
- */
 @Service
 public class UrlResourceCreationServiceImpl implements UrlResourceCreationService {
 
@@ -30,7 +27,7 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
     @Override
     public Resource createFromUrl(String name, String url, String metadata) {
         validateInput(name, url);
-        logger.info("Création d'une ressource depuis l'URL : {}", url);
+        logger.info("Creating resource from URL: {}", url);
 
         try {
             String content = contentDownloadService.downloadContent(url.trim());
@@ -42,18 +39,18 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
                 metadata
             );
         } catch (IOException e) {
-            logger.error("Erreur lors du téléchargement depuis l'URL : {}", url, e);
-            throw new RuntimeException("Impossible de télécharger le contenu depuis l'URL : " + url, e);
+            logger.error("Error downloading from URL: {}", url, e);
+            throw new RuntimeException("Unable to download content from URL: " + url, e);
         }
     }
 
 
     private void validateInput(String name, String url) {
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Le nom de la ressource est obligatoire");
+            throw new IllegalArgumentException("Resource name is required");
         }
         if (url == null || url.trim().isEmpty()) {
-            throw new IllegalArgumentException("L'URL est obligatoire pour une ressource de type URL");
+            throw new IllegalArgumentException("URL is required for URL resource type");
         }
     }
 }

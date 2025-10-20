@@ -11,9 +11,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
-/**
- * Service pour télécharger du contenu depuis des URLs
- */
 @Service
 public class ContentDownloadService {
 
@@ -27,14 +24,8 @@ public class ContentDownloadService {
                 .build();
     }
 
-    /**
-     * Télécharge le contenu depuis une URL
-     * @param url L'URL à télécharger
-     * @return Le contenu sous forme de String
-     * @throws IOException Si une erreur survient lors du téléchargement
-     */
     public String downloadContent(String url) throws IOException {
-        logger.info("Téléchargement du contenu depuis l'URL : {}", url);
+        logger.info("Downloading content from URL: {}", url);
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -46,18 +37,18 @@ public class ContentDownloadService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                logger.info("Contenu téléchargé avec succès depuis : {}", url);
+                logger.info("Content successfully downloaded from: {}", url);
                 return response.body();
             } else {
-                throw new IOException("Erreur HTTP " + response.statusCode() + " lors du téléchargement de " + url);
+                throw new IOException("HTTP error " + response.statusCode() + " when downloading from " + url);
             }
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException("Téléchargement interrompu pour " + url, e);
+            throw new IOException("Download interrupted for " + url, e);
         } catch (Exception e) {
-            logger.error("Erreur lors du téléchargement depuis l'URL : {}", url, e);
-            throw new IOException("Erreur lors du téléchargement depuis " + url, e);
+            logger.error("Error downloading from URL: {}", url, e);
+            throw new IOException("Error downloading from " + url, e);
         }
     }
 }

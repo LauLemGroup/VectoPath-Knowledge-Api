@@ -3,9 +3,6 @@ package com.laulem.vectopath.business.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Modèle de domaine représentant un chunk vectorisé d'une ressource
- */
 public class DocumentChunk {
     private UUID id;
     private UUID resourceId;
@@ -18,7 +15,6 @@ public class DocumentChunk {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters et Setters
     public UUID getId() {
         return id;
     }

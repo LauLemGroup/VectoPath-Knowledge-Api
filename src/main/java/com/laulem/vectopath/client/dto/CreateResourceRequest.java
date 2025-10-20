@@ -2,16 +2,12 @@ package com.laulem.vectopath.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * DTO pour la création d'une nouvelle ressource
- * Peut accepter du contenu direct, une URL ou être utilisé avec un fichier
- */
 public class CreateResourceRequest {
 
     public enum SourceType {
-        TEXT,    // Contenu textuel direct
-        URL,     // URL à télécharger
-        FILE     // Fichier uploadé (géré par le contrôleur)
+        TEXT,
+        URL,
+        FILE
     }
 
     @JsonProperty("name")
@@ -42,7 +38,6 @@ public class CreateResourceRequest {
         this.sourceType = SourceType.TEXT;
     }
 
-    // Getters et Setters
     public String getName() {
         return name;
     }

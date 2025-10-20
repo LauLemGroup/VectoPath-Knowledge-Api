@@ -22,10 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Adaptateur d'infrastructure implémentant le port VectorRepository
- * Architecture hexagonale respectée
- */
+
 @Repository
 public class VectorStoreRepository implements VectorRepository {
 
@@ -44,7 +41,7 @@ public class VectorStoreRepository implements VectorRepository {
     }
 
     public void addResource(Resource resource) {
-        logger.info("Ajout de la ressource [{}] dans le vector store", resource.getName());
+        logger.info("Adding resource [{}] to vector store", resource.getName());
 
         try {
             Document rawDoc = new Document(resource.getContent());
@@ -61,11 +58,11 @@ public class VectorStoreRepository implements VectorRepository {
                     .collect(Collectors.toList());
 
             vectorStore.add(taggedDocs);
-            logger.info("[{}] Chargé {} documents", resource.getName(), taggedDocs.size());
+            logger.info("[{}] Loaded {} documents", resource.getName(), taggedDocs.size());
 
         } catch (Exception e) {
-            logger.error("Erreur lors de l'ajout de la ressource [{}]", resource.getName(), e);
-            throw new RuntimeException("Erreur lors de l'ajout de la ressource", e);
+            logger.error("Error adding resource [{}]", resource.getName(), e);
+            throw new RuntimeException("Error adding resource", e);
         }
     }
 
@@ -99,7 +96,7 @@ public class VectorStoreRepository implements VectorRepository {
             );
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la recherche sémantique", e);
+            logger.error("Error during semantic search", e);
             return List.of();
         }
     }
@@ -121,10 +118,10 @@ public class VectorStoreRepository implements VectorRepository {
 
             if (!documentIds.isEmpty()) {
                 vectorStore.delete(documentIds);
-                logger.info("Supprimé {} documents pour la ressource {}", documentIds.size(), resourceId);
+                logger.info("Deleted {} documents for resource {}", documentIds.size(), resourceId);
             }
         } catch (Exception e) {
-            logger.error("Erreur lors de la suppression de la ressource : {}", resourceId, e);
+            logger.error("Error deleting resource: {}", resourceId, e);
         }
     }
 
@@ -134,7 +131,7 @@ public class VectorStoreRepository implements VectorRepository {
             Integer count = jdbcTemplate.queryForObject(sql, Integer.class, resourceId.toString());
             return count != null && count > 0;
         } catch (Exception e) {
-            logger.error("Erreur lors de la vérification : {}", e.getMessage());
+            logger.error("Error during verification: {}", e.getMessage());
             return false;
         }
     }

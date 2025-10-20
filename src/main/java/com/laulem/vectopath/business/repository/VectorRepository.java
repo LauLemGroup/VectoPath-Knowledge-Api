@@ -6,10 +6,6 @@ import com.laulem.vectopath.business.model.DocumentChunk;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Port (interface) pour la gestion vectorielle des ressources
- * Respecte l'architecture hexagonale : business ne dépend pas d'infra
- */
 public interface VectorRepository {
 
     void addResource(Resource resource);

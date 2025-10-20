@@ -10,10 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
-/**
- * Service de la couche client pour orchestrer les appels vers les services business
- * selon le type de source de la ressource
- */
 @Service
 public class ResourceCreationOrchestrator {
     private final TextResourceCreationService textResourceCreationService;
@@ -27,9 +23,6 @@ public class ResourceCreationOrchestrator {
         this.fileResourceCreationService = fileResourceCreationService;
     }
 
-    /**
-     * Orchestre la création d'une ressource selon le type de source
-     */
     public Resource createResource(CreateResourceRequest request, MultipartFile file) throws IOException {
         CreateResourceRequest.SourceType sourceType = request.getSourceType() != null ? request.getSourceType() : CreateResourceRequest.SourceType.TEXT;
         switch (sourceType) {
@@ -40,7 +33,7 @@ public class ResourceCreationOrchestrator {
             case FILE:
                 return fileResourceCreationService.createFromFileContent(request.getName(), file.getBytes(), file.getOriginalFilename(), request.getMetadata());
             default:
-                throw new IllegalArgumentException("Type de source non supporté : " + sourceType);
+                throw new IllegalArgumentException("Unsupported source type: " + sourceType);
         }
     }
 

@@ -3,9 +3,6 @@ package com.laulem.vectopath.business.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Modèle de domaine représentant une ressource à vectoriser
- */
 public class Resource {
     private UUID id;
     private String name;
@@ -31,7 +28,6 @@ public class Resource {
         this.metadata = metadata;
     }
 
-    // Getters et Setters
     public UUID getId() {
         return id;
     }

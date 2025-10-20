@@ -27,9 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Contrôleur REST pour la gestion des ressources
- */
+
 @RestController
 @RequestMapping("/api/v1/resources")
 @CrossOrigin(origins = "*")
@@ -48,38 +46,32 @@ public class ResourceController {
         this.resourceRequestAdapter = resourceRequestAdapter;
     }
 
-    /**
-     * Crée une nouvelle ressource depuis du contenu JSON
-     */
     @PostMapping(consumes = "application/json")
     public ResponseEntity<ResourceResponse> createResource(@RequestBody CreateResourceRequest request) {
         try {
-            logger.info("Création d'une nouvelle ressource de type {} : {}", request.getSourceType(), request.getName());
+            logger.info("Creating new resource of type {} : {}", request.getSourceType(), request.getName());
             Resource resource = resourceCreationOrchestrator.createResource(request, null);
             return ResponseEntity.status(HttpStatus.CREATED).body(new ResourceResponse(resource));
 
         } catch (IllegalArgumentException e) {
-            logger.warn("Requête invalide : {}", e.getMessage());
+            logger.warn("Invalid request: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
-            logger.error("Erreur lors de la création de la ressource", e);
+            logger.error("Error creating resource", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
-            logger.error("Erreur lors de la création de la ressource", e);
+            logger.error("Error creating resource", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Crée une nouvelle ressource depuis un fichier multipart
-     */
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<ResourceResponse> createResourceFromFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "metadata", required = false) String metadata) {
         try {
-            logger.info("Création d'une ressource depuis un fichier : {}", file.getOriginalFilename());
+            logger.info("Creating resource from file: {}", file.getOriginalFilename());
 
             CreateResourceRequest request = new CreateResourceRequest();
             request.setSourceType(CreateResourceRequest.SourceType.FILE);
@@ -90,23 +82,20 @@ public class ResourceController {
             return ResponseEntity.status(HttpStatus.CREATED).body(new ResourceResponse(resource));
 
         } catch (IllegalArgumentException e) {
-            logger.warn("Requête invalide : {}", e.getMessage());
+            logger.warn("Invalid request: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
-            logger.error("Erreur lors de la création de la ressource", e);
+            logger.error("Error creating resource", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
-            logger.error("Erreur lors de la création de la ressource", e);
+            logger.error("Error creating resource", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Récupère toutes les ressources
-     */
     @GetMapping
     public ResponseEntity<List<ResourceResponse>> getAllResources() {
-        logger.info("Récupération de toutes les ressources");
+        logger.info("Retrieving all resources");
 
         try {
             List<Resource> resources = resourceService.getAllResources();
@@ -117,17 +106,14 @@ public class ResourceController {
             return ResponseEntity.ok(responses);
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la récupération des ressources", e);
+            logger.error("Error retrieving resources", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Récupère une ressource par son ID
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ResourceResponse> getResourceById(@PathVariable UUID id) {
-        logger.info("Récupération de la ressource : {}", id);
+        logger.info("Retrieving resource: {}", id);
 
         try {
             Optional<Resource> resource = resourceService.getResourceById(id);
@@ -139,17 +125,14 @@ public class ResourceController {
             }
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la récupération de la ressource : {}", id, e);
+            logger.error("Error retrieving resource: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Recherche des ressources par nom
-     */
     @GetMapping("/search")
     public ResponseEntity<List<ResourceResponse>> searchResourcesByName(@RequestParam String name) {
-        logger.info("Recherche des ressources par nom : {}", name);
+        logger.info("Searching resources by name: {}", name);
 
         try {
             List<Resource> resources = resourceService.searchResourcesByName(name);
@@ -160,17 +143,14 @@ public class ResourceController {
             return ResponseEntity.ok(responses);
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la recherche par nom : {}", name, e);
+            logger.error("Error searching by name: {}", name, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Récupère les ressources par statut
-     */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ResourceResponse>> getResourcesByStatus(@PathVariable ResourceStatus status) {
-        logger.info("Récupération des ressources par statut : {}", status);
+        logger.info("Retrieving resources by status: {}", status);
 
         try {
             List<Resource> resources = resourceService.getResourcesByStatus(status);
@@ -181,44 +161,38 @@ public class ResourceController {
             return ResponseEntity.ok(responses);
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la récupération par statut : {}", status, e);
+            logger.error("Error retrieving by status: {}", status, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Relance le traitement d'une ressource
-     */
     @PostMapping("/{id}/reprocess")
     public ResponseEntity<ResourceResponse> reprocessResource(@PathVariable UUID id) {
-        logger.info("Relance du traitement de la ressource : {}", id);
+        logger.info("Reprocessing resource: {}", id);
 
         try {
             Resource resource = resourceService.reprocessResource(id);
             return ResponseEntity.ok(new ResourceResponse(resource));
 
         } catch (RuntimeException e) {
-            logger.error("Ressource non trouvée : {}", id, e);
+            logger.error("Resource not found: {}", id, e);
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Erreur lors du retraitement de la ressource : {}", id, e);
+            logger.error("Error reprocessing resource: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Supprime une ressource
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteResource(@PathVariable UUID id) {
-        logger.info("Suppression de la ressource : {}", id);
+        logger.info("Deleting resource: {}", id);
 
         try {
             resourceService.deleteResource(id);
             return ResponseEntity.noContent().build();
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la suppression de la ressource : {}", id, e);
+            logger.error("Error deleting resource: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

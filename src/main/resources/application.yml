@@ -2,14 +2,12 @@ spring:
   application:
     name: VectoPath
 
-  # Configuration de la base de données PostgreSQL
   datasource:
     url: jdbc:postgresql://localhost:5432/vecto_path
     username: user
     password: password
     driver-class-name: org.postgresql.Driver
 
-  # Configuration Spring AI
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:demo}
@@ -18,7 +16,6 @@ spring:
         options:
           model: text-embedding-3-small
 
-    # Configuration Spring AI Vector Store
     vectorstore:
       pgvector:
         index-type: HNSW
@@ -26,17 +23,14 @@ spring:
         dimensions: 1536
         max-document-batch-size: 10000
 
-# Configuration du serveur
 server:
   port: 8080
 
-# Configuration JSON
 spring.jackson:
   serialization:
     write-dates-as-timestamps: false
   time-zone: UTC
 
-# Configuration des logs
 logging:
   level:
     com.laulem.vectopath: INFO
