@@ -23,7 +23,8 @@ public class DocumentChunkResponse {
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
-    public DocumentChunkResponse() {}
+    public DocumentChunkResponse() {
+    }
 
     public DocumentChunkResponse(DocumentChunk chunk) {
         this.id = chunk.getId();
@@ -32,6 +33,7 @@ public class DocumentChunkResponse {
         this.metadata = chunk.getMetadata();
         this.createdAt = chunk.getCreatedAt();
     }
+
     public UUID getId() {
         return id;
     }

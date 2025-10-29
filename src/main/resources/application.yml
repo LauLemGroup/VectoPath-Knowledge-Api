@@ -3,37 +3,44 @@ spring:
     name: VectoPath
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/vecto_path
-    username: user
-    password: password
-    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/vecto_path}
+    username: ${DATABASE_USERNAME:user}
+    password: ${DATABASE_PASSWORD:password}
+    driver-class-name: ${DATABASE_DRIVER:org.postgresql.Driver}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:none}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: ${HIBERNATE_FORMAT_SQL:false}
+    open-in-view: ${JPA_OPEN_IN_VIEW:false}
 
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:demo}
       embedding:
-        model: text-embedding-3-small
+        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
         options:
-          model: text-embedding-3-small
+          model: ${OPENAI_EMBEDDING_OPTIONS_MODEL:text-embedding-3-small}
 
     vectorstore:
       pgvector:
-        index-type: HNSW
-        distance-type: COSINE_DISTANCE
-        dimensions: 1536
-        max-document-batch-size: 10000
+        index-type: ${PGVECTOR_INDEX_TYPE:HNSW}
+        distance-type: ${PGVECTOR_DISTANCE_TYPE:COSINE_DISTANCE}
+        dimensions: ${PGVECTOR_DIMENSIONS:1536}
+        max-document-batch-size: ${PGVECTOR_MAX_DOCUMENT_BATCH_SIZE:10000}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring.jackson:
-  serialization:
-    write-dates-as-timestamps: false
-  time-zone: UTC
+  time-zone: ${JACKSON_TIME_ZONE:UTC}
 
 logging:
   level:
-    com.laulem.vectopath: INFO
-    org.springframework.ai: DEBUG
+    com.laulem.vectopath: ${LOGGING_LEVEL_VECTOPATH:INFO}
+    org.springframework.ai: ${LOGGING_LEVEL_SPRING_AI:INFO}
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "${LOGGING_PATTERN_CONSOLE:%d{yyyy-MM-dd HH:mm:ss} - %msg%n}"

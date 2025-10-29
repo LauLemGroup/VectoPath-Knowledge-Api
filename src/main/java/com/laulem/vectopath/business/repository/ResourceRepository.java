@@ -17,9 +17,7 @@ public interface ResourceRepository {
 
     List<Resource> findByStatus(ResourceStatus status);
 
-    List<Resource> findByNameContaining(String name);
+    List<Resource> findByNameContainingIgnoreCase(String name);
 
     void deleteById(UUID id);
-
-    boolean existsById(UUID id);
 }

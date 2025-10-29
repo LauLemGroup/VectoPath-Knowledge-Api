@@ -1,11 +1,11 @@
 package com.laulem.vectopath.business.service.impl;
 
-import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
-import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;

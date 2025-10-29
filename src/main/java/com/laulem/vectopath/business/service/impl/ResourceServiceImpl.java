@@ -1,10 +1,12 @@
 package com.laulem.vectopath.business.service.impl;
 
+import com.laulem.vectopath.business.exception.NotFoundException;
+import com.laulem.vectopath.business.exception.VectorizationException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.repository.ResourceRepository;
+import com.laulem.vectopath.business.repository.VectorRepository;
 import com.laulem.vectopath.business.service.ResourceService;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,19 +23,20 @@ public class ResourceServiceImpl implements ResourceService {
 
     private final ResourceRepository resourceRepository;
     private final VectorizedResourceService vectorizedResourceService;
+    private final VectorRepository vectorRepository;
 
     public ResourceServiceImpl(ResourceRepository resourceRepository,
-                              VectorizedResourceService vectorizedResourceService) {
+                               VectorizedResourceService vectorizedResourceService, final VectorRepository vectorRepository) {
         this.resourceRepository = resourceRepository;
         this.vectorizedResourceService = vectorizedResourceService;
+        this.vectorRepository = vectorRepository;
     }
 
     @Override
     public Resource createResource(String name, String content, String contentType, String metadata) {
         Resource resource = new Resource(name, content, contentType, metadata);
         resource = resourceRepository.save(resource);
-        processResourceVectorization(resource);
-
+        resource = processResourceVectorization(resource);
         return resource;
     }
 
@@ -54,16 +57,7 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public List<Resource> searchResourcesByName(String name) {
-        return resourceRepository.findByNameContaining(name);
-    }
-
-    @Override
-    public Resource updateResourceStatus(UUID id, ResourceStatus status) {
-        Resource resource = resourceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resource not found: " + id));
-
-        resource.setStatus(status);
-        return resourceRepository.save(resource);
+        return resourceRepository.findByNameContainingIgnoreCase(name);
     }
 
     @Override
@@ -77,42 +71,40 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public Resource reprocessResource(UUID id) {
         Resource resource = resourceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resource not found: " + id));
+                .orElseThrow(() -> new NotFoundException("Resource", id.toString()));
 
         logger.info("Reprocessing resource: {}", resource.getName());
 
         vectorizedResourceService.deleteResource(id);
-        processResourceVectorization(resource);
+        resource = processResourceVectorization(resource);
 
         return resource;
     }
 
-    private void processResourceVectorization(Resource resource) {
+    private Resource processResourceVectorization(Resource resource) {
         try {
             resource.setStatus(ResourceStatus.PROCESSING);
-            resourceRepository.save(resource);
+            resource = resourceRepository.save(resource);
 
             if (vectorizedResourceService.isResourceAlreadyLoaded(resource.getId())) {
                 logger.info("Resource [{}] already loaded in vector store", resource.getName());
                 resource.setStatus(ResourceStatus.VECTORIZED);
-                resourceRepository.save(resource);
-                return;
+                resource = resourceRepository.save(resource);
+                return resource;
             }
 
-            vectorizedResourceService.addResource(resource);
+            vectorRepository.addResource(resource);
 
             resource.setStatus(ResourceStatus.VECTORIZED);
-            resourceRepository.save(resource);
+            resource = resourceRepository.save(resource);
 
             logger.info("Vectorization completed successfully for resource: {}", resource.getName());
-
+            return resource;
         } catch (Exception e) {
-            logger.error("Error during vectorization of resource: {}", resource.getName(), e);
-
             resource.setStatus(ResourceStatus.ERROR);
             resourceRepository.save(resource);
+
+            throw new VectorizationException(resource.getName(), e);
         }
     }
-
-
 }

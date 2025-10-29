@@ -29,7 +29,7 @@ L'application suit une architecture hexagonale avec les couches suivantes :
 ### Prérequis
 - Java 21
 - PostgreSQL avec extension pgvector
-- Clé API OpenAI (optionnelle pour les tests)
+- Clé API OpenAI
 
 ### Configuration
 1. Démarrez PostgreSQL avec Docker Compose :
@@ -48,7 +48,7 @@ export OPENAI_API_KEY=your_api_key_here
 ./mvnw spring-boot:run
 ```
 
-L'API sera disponible sur `http://localhost:8080`
+L'API est disponible sur `http://localhost:8080`
 
 ## API Endpoints
 

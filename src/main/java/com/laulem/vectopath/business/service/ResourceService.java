@@ -19,8 +19,6 @@ public interface ResourceService {
 
     List<Resource> searchResourcesByName(String name);
 
-    Resource updateResourceStatus(UUID id, ResourceStatus status);
-
     void deleteResource(UUID id);
 
     Resource reprocessResource(UUID id);

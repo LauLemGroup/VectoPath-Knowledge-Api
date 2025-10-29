@@ -4,11 +4,13 @@ import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.FileResourceCreationService;
 import com.laulem.vectopath.business.service.TextResourceCreationService;
 import com.laulem.vectopath.business.service.UrlResourceCreationService;
-import com.laulem.vectopath.client.dto.CreateResourceRequest;
+import com.laulem.vectopath.client.dto.CreateResourceRequestDto;
+import com.laulem.vectopath.client.exception.UnsupportedSourceTypeException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @Service
 public class ResourceCreationOrchestrator {
@@ -23,20 +25,23 @@ public class ResourceCreationOrchestrator {
         this.fileResourceCreationService = fileResourceCreationService;
     }
 
-    public Resource createResource(CreateResourceRequest request, MultipartFile file) throws IOException {
-        CreateResourceRequest.SourceType sourceType = request.getSourceType() != null ? request.getSourceType() : CreateResourceRequest.SourceType.TEXT;
+    public Resource createResource(CreateResourceRequestDto request, MultipartFile file) throws IOException {
+        CreateResourceRequestDto.SourceType sourceType = getSourceTypeOrDefault(request);
         switch (sourceType) {
             case TEXT:
-                return textResourceCreationService.createFromText(request.getName(), request.getContent(), request.getMetadata());
+                return textResourceCreationService.createFromText(request.name(), request.content(), request.metadata());
             case URL:
-                return urlResourceCreationService.createFromUrl(request.getName(), request.getUrl(), request.getMetadata());
+                return urlResourceCreationService.createFromUrl(request.name(), request.url(), request.metadata());
             case FILE:
-                return fileResourceCreationService.createFromFileContent(request.getName(), file.getBytes(), file.getOriginalFilename(), request.getMetadata());
+                Objects.requireNonNull(file, "MultipartFile must not be null for FILE source type");
+                return fileResourceCreationService.createFromFileContent(request.name(), file.getBytes(), file.getOriginalFilename(), request.metadata());
             default:
-                throw new IllegalArgumentException("Unsupported source type: " + sourceType);
+                throw new UnsupportedSourceTypeException(sourceType);
         }
     }
 
-
+    private CreateResourceRequestDto.SourceType getSourceTypeOrDefault(final CreateResourceRequestDto request) {
+        return request.sourceType() != null ? request.sourceType() : CreateResourceRequestDto.SourceType.TEXT;
+    }
 }
 

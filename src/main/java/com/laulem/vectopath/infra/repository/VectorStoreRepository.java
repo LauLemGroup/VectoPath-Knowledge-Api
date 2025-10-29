@@ -2,25 +2,26 @@ package com.laulem.vectopath.infra.repository;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
+import com.laulem.vectopath.infra.repository.exception.VectorStoreAdditionException;
+import com.laulem.vectopath.infra.repository.exception.VectorStoreDeletionException;
 import org.postgresql.util.PGobject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Repository
@@ -55,14 +56,13 @@ public class VectorStoreRepository implements VectorRepository {
                             "status", resource.getStatus().name(),
                             "chunk_type", "content"
                     )))
-                    .collect(Collectors.toList());
+                    .toList();
 
             vectorStore.add(taggedDocs);
             logger.info("[{}] Loaded {} documents", resource.getName(), taggedDocs.size());
 
         } catch (Exception e) {
-            logger.error("Error adding resource [{}]", resource.getName(), e);
-            throw new RuntimeException("Error adding resource", e);
+            throw new VectorStoreAdditionException(resource.getName(), e);
         }
     }
 
@@ -113,15 +113,16 @@ public class VectorStoreRepository implements VectorRepository {
 
     public void deleteResource(UUID resourceId) {
         try {
-            String sql = "SELECT id FROM vector_store WHERE metadata->>'resource_id' = ?";
-            List<String> documentIds = jdbcTemplate.queryForList(sql, String.class, resourceId.toString());
+            String deleteSql = "DELETE FROM vector_store WHERE metadata->>'resource_id' = ?";
+            int deletedCount = jdbcTemplate.update(deleteSql, resourceId.toString());
 
-            if (!documentIds.isEmpty()) {
-                vectorStore.delete(documentIds);
-                logger.info("Deleted {} documents for resource {}", documentIds.size(), resourceId);
+            if (deletedCount > 0) {
+                logger.info("Deleted {} documents for resource {}", deletedCount, resourceId);
+            } else {
+                logger.warn("No documents found to delete for resource {}", resourceId);
             }
         } catch (Exception e) {
-            logger.error("Error deleting resource: {}", resourceId, e);
+            throw new VectorStoreDeletionException(resourceId, e);
         }
     }
 
@@ -138,7 +139,8 @@ public class VectorStoreRepository implements VectorRepository {
 
     private Map<String, Object> parseMetadata(String json) {
         try {
-            return objectMapper.readValue(json, new TypeReference<>() {});
+            return objectMapper.readValue(json, new TypeReference<>() {
+            });
         } catch (Exception e) {
             return Map.of();
         }

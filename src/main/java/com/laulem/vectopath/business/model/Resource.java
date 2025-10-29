@@ -14,7 +14,6 @@ public class Resource {
     private LocalDateTime updatedAt;
 
     public Resource() {
-        this.id = UUID.randomUUID();
         this.status = ResourceStatus.PENDING;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();

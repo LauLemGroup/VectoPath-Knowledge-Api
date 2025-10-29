@@ -10,12 +10,14 @@ public class SearchRequest {
     @JsonProperty("limit")
     private int limit = 10;
 
-    public SearchRequest() {}
+    public SearchRequest() {
+    }
 
     public SearchRequest(String query, int limit) {
         this.query = query;
         this.limit = limit;
     }
+
     public String getQuery() {
         return query;
     }

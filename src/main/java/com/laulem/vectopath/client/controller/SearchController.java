@@ -1,18 +1,17 @@
 package com.laulem.vectopath.client.controller;
 
-import com.laulem.vectopath.business.model.DocumentChunk;
-import com.laulem.vectopath.business.service.DocumentChunkService;
+import com.laulem.vectopath.business.service.impl.VectorizedResourceService;
 import com.laulem.vectopath.client.dto.DocumentChunkResponse;
 import com.laulem.vectopath.client.dto.SearchRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @RestController
@@ -22,30 +21,19 @@ public class SearchController {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
 
-    private final DocumentChunkService documentChunkService;
+    private final VectorizedResourceService vectorizedResourceService;
 
-    public SearchController(DocumentChunkService documentChunkService) {
-        this.documentChunkService = documentChunkService;
+    public SearchController(VectorizedResourceService vectorizedResourceService) {
+        this.vectorizedResourceService = vectorizedResourceService;
     }
 
     @PostMapping("/semantic")
-    public ResponseEntity<List<DocumentChunkResponse>> searchSemantic(@RequestBody SearchRequest request) {
+    public List<DocumentChunkResponse> searchSemantic(@RequestBody SearchRequest request) {
         logger.info("Semantic search: {}", request.getQuery());
 
-        try {
-            List<DocumentChunk> chunks = documentChunkService.searchSimilarChunks(
-                request.getQuery(),
-                request.getLimit()
-            );
-            List<DocumentChunkResponse> responses = chunks.stream()
-                    .map(DocumentChunkResponse::new)
-                    .collect(Collectors.toList());
-
-            return ResponseEntity.ok(responses);
-
-        } catch (Exception e) {
-            logger.error("Error during semantic search", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return vectorizedResourceService.searchSimilar(request.getQuery(), request.getLimit())
+                .stream()
+                .map(DocumentChunkResponse::new)
+                .toList();
     }
 }

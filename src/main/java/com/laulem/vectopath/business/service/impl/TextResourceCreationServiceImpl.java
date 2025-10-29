@@ -1,13 +1,15 @@
 package com.laulem.vectopath.business.service.impl;
 
+import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.business.service.TextResourceCreationService;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TextResourceCreationServiceImpl implements TextResourceCreationService {
-    public static final String CONTENT_TYPE = "text/plain";
     private final ResourceService resourceService;
 
     public TextResourceCreationServiceImpl(ResourceService resourceService) {
@@ -17,15 +19,16 @@ public class TextResourceCreationServiceImpl implements TextResourceCreationServ
     @Override
     public Resource createFromText(String name, String content, String metadata) {
         validateInput(name, content);
-        return resourceService.createResource(name.trim(), content.trim(), CONTENT_TYPE, metadata);
+        return resourceService.createResource(name.trim(), content.trim(), MediaType.TEXT_PLAIN_VALUE, metadata);
     }
 
     private void validateInput(String name, String content) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Resource name is required");
+        if (Strings.isBlank(name)) {
+            throw new ParamException("REQUIRED", "Resource name is required", "name");
         }
-        if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("Content is required for TEXT resource type");
+
+        if (Strings.isBlank(content)) {
+            throw new ParamException("REQUIRED", "Content is required for TEXT resource type", "content");
         }
     }
 }

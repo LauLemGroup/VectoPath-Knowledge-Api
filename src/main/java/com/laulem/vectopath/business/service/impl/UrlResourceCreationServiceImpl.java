@@ -1,15 +1,17 @@
 package com.laulem.vectopath.business.service.impl;
 
+import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.ContentDownloadService;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.business.service.UrlResourceCreationService;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Map;
 
 @Service
 public class UrlResourceCreationServiceImpl implements UrlResourceCreationService {
@@ -25,32 +27,20 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
     }
 
     @Override
-    public Resource createFromUrl(String name, String url, String metadata) {
+    public Resource createFromUrl(String name, String url, String metadata) throws IOException {
         validateInput(name, url);
         logger.info("Creating resource from URL: {}", url);
-
-        try {
-            String content = contentDownloadService.downloadContent(url.trim());
-
-            return resourceService.createResource(
-                name.trim(),
-                content,
-                "text/plain",
-                metadata
-            );
-        } catch (IOException e) {
-            logger.error("Error downloading from URL: {}", url, e);
-            throw new RuntimeException("Unable to download content from URL: " + url, e);
-        }
+        String content = contentDownloadService.downloadContent(url.trim());
+        return resourceService.createResource(name.trim(), content, MediaType.TEXT_PLAIN_VALUE, metadata);
     }
 
-
     private void validateInput(String name, String url) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Resource name is required");
+        if (Strings.isBlank(name)) {
+            throw new ParamException("REQUIRED", "Resource name is required", "name");
         }
-        if (url == null || url.trim().isEmpty()) {
-            throw new IllegalArgumentException("URL is required for URL resource type");
+
+        if (Strings.isBlank(url)) {
+            throw new ParamException("REQUIRED", "URL is required for URL resource type", "url");
         }
     }
 }
