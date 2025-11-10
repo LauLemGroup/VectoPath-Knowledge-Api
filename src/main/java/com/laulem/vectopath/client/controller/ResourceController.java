@@ -3,14 +3,13 @@ package com.laulem.vectopath.client.controller;
 import com.laulem.vectopath.business.exception.NotFoundException;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.service.ResourceService;
-import com.laulem.vectopath.client.dto.CreateResourceRequestDto;
+import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import com.laulem.vectopath.client.dto.ResourceResponse;
 import com.laulem.vectopath.client.service.ResourceCreationOrchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +30,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/resources")
-@CrossOrigin(origins = "*")
 public class ResourceController {
     private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
 
@@ -46,7 +44,7 @@ public class ResourceController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResourceResponse createResource(@RequestBody @Valid CreateResourceRequestDto request) throws IOException {
+    public ResourceResponse createResource(@RequestBody @Valid CreateResourceRequest request) throws IOException {
         logger.info("Creating new resource of type {} : {}", request.sourceType(), request.name());
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, null));
     }
@@ -58,7 +56,7 @@ public class ResourceController {
             @RequestParam("name") String name,
             @RequestParam(value = "metadata", required = false) String metadata) throws IOException {
         logger.info("Creating resource from file: {} with name: {}", file.getOriginalFilename(), name);
-        CreateResourceRequestDto request = new CreateResourceRequestDto(name, null, null, CreateResourceRequestDto.SourceType.FILE, null, metadata);
+        CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, null, metadata);
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, file));
     }
 

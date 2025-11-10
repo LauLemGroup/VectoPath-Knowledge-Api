@@ -2,7 +2,7 @@ package com.laulem.vectopath.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record CreateResourceRequestDto(
+public record CreateResourceRequest(
         @JsonProperty("name")
         String name,
 

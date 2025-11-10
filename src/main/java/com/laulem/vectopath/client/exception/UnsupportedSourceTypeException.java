@@ -1,10 +1,10 @@
 package com.laulem.vectopath.client.exception;
 
-import com.laulem.vectopath.client.dto.CreateResourceRequestDto;
+import com.laulem.vectopath.client.dto.CreateResourceRequest;
 
 public class UnsupportedSourceTypeException extends RuntimeException {
 
-    public UnsupportedSourceTypeException(CreateResourceRequestDto.SourceType sourceType) {
+    public UnsupportedSourceTypeException(CreateResourceRequest.SourceType sourceType) {
         super("Unsupported source type: " + sourceType);
     }
 }

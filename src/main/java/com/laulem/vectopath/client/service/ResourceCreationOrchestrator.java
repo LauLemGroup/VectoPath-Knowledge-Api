@@ -4,7 +4,7 @@ import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.FileResourceCreationService;
 import com.laulem.vectopath.business.service.TextResourceCreationService;
 import com.laulem.vectopath.business.service.UrlResourceCreationService;
-import com.laulem.vectopath.client.dto.CreateResourceRequestDto;
+import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import com.laulem.vectopath.client.exception.UnsupportedSourceTypeException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,8 +25,8 @@ public class ResourceCreationOrchestrator {
         this.fileResourceCreationService = fileResourceCreationService;
     }
 
-    public Resource createResource(CreateResourceRequestDto request, MultipartFile file) throws IOException {
-        CreateResourceRequestDto.SourceType sourceType = getSourceTypeOrDefault(request);
+    public Resource createResource(CreateResourceRequest request, MultipartFile file) throws IOException {
+        CreateResourceRequest.SourceType sourceType = getSourceTypeOrDefault(request);
         switch (sourceType) {
             case TEXT:
                 return textResourceCreationService.createFromText(request.name(), request.content(), request.metadata());
@@ -40,8 +40,8 @@ public class ResourceCreationOrchestrator {
         }
     }
 
-    private CreateResourceRequestDto.SourceType getSourceTypeOrDefault(final CreateResourceRequestDto request) {
-        return request.sourceType() != null ? request.sourceType() : CreateResourceRequestDto.SourceType.TEXT;
+    private CreateResourceRequest.SourceType getSourceTypeOrDefault(final CreateResourceRequest request) {
+        return request.sourceType() != null ? request.sourceType() : CreateResourceRequest.SourceType.TEXT;
     }
 }
 

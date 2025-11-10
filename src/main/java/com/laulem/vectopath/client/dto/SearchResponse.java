@@ -6,7 +6,7 @@ import com.laulem.vectopath.business.model.DocumentChunk;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class DocumentChunkResponse {
+public class SearchResponse {
 
     @JsonProperty("id")
     private UUID id;
@@ -23,10 +23,10 @@ public class DocumentChunkResponse {
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
-    public DocumentChunkResponse() {
+    public SearchResponse() {
     }
 
-    public DocumentChunkResponse(DocumentChunk chunk) {
+    public SearchResponse(DocumentChunk chunk) {
         this.id = chunk.getId();
         this.resourceId = chunk.getResourceId();
         this.content = chunk.getContent();

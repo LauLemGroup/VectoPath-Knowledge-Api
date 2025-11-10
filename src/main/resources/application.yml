@@ -24,7 +24,14 @@ spring:
         model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
         options:
           model: ${OPENAI_EMBEDDING_OPTIONS_MODEL:text-embedding-3-small}
-
+    mcp:
+      server:
+        name: vecto-path-server
+        version: 1.0.0
+        type: SYNC
+        stdio:
+          enabled: false
+        sse-message-endpoint: /mcp/message
     vectorstore:
       pgvector:
         index-type: ${PGVECTOR_INDEX_TYPE:HNSW}
