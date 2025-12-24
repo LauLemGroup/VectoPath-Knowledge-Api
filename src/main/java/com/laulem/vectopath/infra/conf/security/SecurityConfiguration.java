@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.security;
+package com.laulem.vectopath.infra.conf.security;
 
 import com.laulem.vectopath.infra.properties.CorsProperties;
 import com.laulem.vectopath.infra.conf.mdc.MdcUserFilter;

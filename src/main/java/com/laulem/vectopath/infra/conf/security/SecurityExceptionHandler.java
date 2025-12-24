@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.security;
+package com.laulem.vectopath.infra.conf.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

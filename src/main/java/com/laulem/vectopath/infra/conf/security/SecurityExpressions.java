@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.security;
+package com.laulem.vectopath.infra.conf.security;
 
 public final class SecurityExpressions {
 

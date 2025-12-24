@@ -6,7 +6,7 @@ import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import com.laulem.vectopath.client.dto.ResourceResponse;
 import com.laulem.vectopath.client.service.ResourceCreationOrchestrator;
-import com.laulem.vectopath.infra.security.SecurityExpressions;
+import com.laulem.vectopath.infra.conf.security.SecurityExpressions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
