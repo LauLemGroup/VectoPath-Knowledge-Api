@@ -1,7 +1,8 @@
-package com.laulem.vectopath.business.service;
+package com.laulem.vectopath.infra.service;
 
 import com.laulem.vectopath.business.exception.DownloadInterruptedException;
 import com.laulem.vectopath.business.exception.HttpDownloadException;
+import com.laulem.vectopath.business.service.ContentDownloaderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 @Service
-public class ContentDownloadService {
+public class ContentDownloadService implements ContentDownloaderService {
 
     private static final Logger logger = LoggerFactory.getLogger(ContentDownloadService.class);
     private final HttpClient httpClient;
@@ -31,6 +32,7 @@ public class ContentDownloadService {
                 .build();
     }
 
+    @Override
     public String downloadContent(String url) throws IOException {
         logger.info("Downloading content from URL: {}", url);
 
@@ -55,3 +57,4 @@ public class ContentDownloadService {
         }
     }
 }
+
