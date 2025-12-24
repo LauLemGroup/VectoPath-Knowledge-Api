@@ -6,10 +6,12 @@ import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import com.laulem.vectopath.client.dto.ResourceResponse;
 import com.laulem.vectopath.client.service.ResourceCreationOrchestrator;
+import com.laulem.vectopath.infra.security.SecurityExpressions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,6 +44,7 @@ public class ResourceController {
         this.resourceCreationOrchestrator = resourceCreationOrchestrator;
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResourceResponse createResource(@RequestBody @Valid CreateResourceRequest request) throws IOException {
@@ -49,6 +52,7 @@ public class ResourceController {
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, null));
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResourceResponse createResourceFromFile(
@@ -60,6 +64,7 @@ public class ResourceController {
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, file));
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_READ)
     @GetMapping
     public List<ResourceResponse> getAllResources() {
         logger.info("Retrieving all resources");
@@ -69,6 +74,7 @@ public class ResourceController {
                 .toList();
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_READ)
     @GetMapping("/{id}")
     public ResourceResponse getResourceById(@PathVariable UUID id) {
         logger.info("Retrieving resource: {}", id);
@@ -78,6 +84,7 @@ public class ResourceController {
                 .orElseThrow(() -> new NotFoundException("Resource", id.toString()));
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_READ)
     @GetMapping("/search")
     public List<ResourceResponse> searchResourcesByName(@RequestParam String name) {
         logger.info("Searching resources by name: {}", name);
@@ -88,6 +95,7 @@ public class ResourceController {
                 .toList();
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_READ)
     @GetMapping("/status/{status}")
     public List<ResourceResponse> getResourcesByStatus(@PathVariable ResourceStatus status) {
         logger.info("Retrieving resources by status: {}", status);
@@ -98,12 +106,14 @@ public class ResourceController {
                 .toList();
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
     @PostMapping("/{id}/reprocess")
     public ResourceResponse reprocessResource(@PathVariable UUID id) {
         logger.info("Reprocessing resource: {}", id);
         return new ResourceResponse(resourceService.reprocessResource(id));
     }
 
+    @PreAuthorize(SecurityExpressions.RESOURCES_DELETE)
     @DeleteMapping("/{id}")
     public void deleteResource(@PathVariable UUID id) {
         logger.info("Deleting resource: {}", id);

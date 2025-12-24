@@ -4,11 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -23,12 +22,6 @@ public class UserTools {
     private UserTools() {
     }
 
-    /**
-     * Get the IP address
-     *
-     * @param request request
-     * @return IP address
-     */
     public static String getIpAddr(final HttpServletRequest request) {
         String ipAdresse = Stream.concat(Stream.ofNullable(request.getRemoteAddr()), UserTools.IP_HEADERS.stream().map(request::getHeader))
                 .filter(Objects::nonNull)
@@ -52,22 +45,14 @@ public class UserTools {
         }
     }
 
-    public static String getUsername(final HttpServletRequest request) {
+    public static String getUsername() {
         try {
-            final String authHeader = request.getHeader("Authorization");
-
-            if (authHeader != null && authHeader.startsWith("Basic")) {
-                // The user credentials are Base64 encoded in the Authorization header
-                final String base64Credentials = authHeader.substring("Basic".length()).trim();
-                final byte[] credDecoded = Base64.getDecoder().decode(base64Credentials);
-                final String credentials = new String(credDecoded, StandardCharsets.UTF_8);
-
-                // The credentials are in the form "username:password"
-                return credentials.contains(":") ? credentials.split(":", 2)[0] : null;
-            }
+            return SecurityContextHolder.getContext()
+                    .getAuthentication()
+                    .getName();
         } catch (final Exception e) {
-            logger.error("Error getting username from request", e);
+            logger.error("Error getting username from SecurityContext", e);
+            return null;
         }
-        return null;
     }
 }

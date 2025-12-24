@@ -4,6 +4,7 @@ import com.laulem.vectopath.business.exception.DownloadInterruptedException;
 import com.laulem.vectopath.business.exception.HttpDownloadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,16 @@ import java.time.Duration;
 @Service
 public class ContentDownloadService {
 
-    public static final int TIMEOUT_DELAY_SEC = 60;
     private static final Logger logger = LoggerFactory.getLogger(ContentDownloadService.class);
     private final HttpClient httpClient;
+    private final int timeoutSeconds;
 
-    public ContentDownloadService() {
+    public ContentDownloadService(
+            @Value("${content.download.timeout-seconds:30}") int timeoutSeconds,
+            @Value("${content.download.connect-timeout-seconds:10}") int connectTimeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(30))
+                .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
                 .build();
     }
 
@@ -31,7 +35,12 @@ public class ContentDownloadService {
         logger.info("Downloading content from URL: {}", url);
 
         try {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).timeout(Duration.ofSeconds(TIMEOUT_DELAY_SEC)).GET().build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .GET()
+                    .build();
+
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == HttpStatus.OK.value()) {

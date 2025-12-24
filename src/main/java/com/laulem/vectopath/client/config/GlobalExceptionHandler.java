@@ -1,4 +1,4 @@
-package com.laulem.vectopath.client.controller;
+package com.laulem.vectopath.client.config;
 
 import com.laulem.vectopath.business.exception.DownloadInterruptedException;
 import com.laulem.vectopath.business.exception.HttpDownloadException;

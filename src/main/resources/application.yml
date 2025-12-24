@@ -2,6 +2,12 @@ spring:
   application:
     name: VectoPath
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
+
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/vecto_path}
     username: ${DATABASE_USERNAME:user}
@@ -38,6 +44,27 @@ spring:
         distance-type: ${PGVECTOR_DISTANCE_TYPE:COSINE_DISTANCE}
         dimensions: ${PGVECTOR_DIMENSIONS:1536}
         max-document-batch-size: ${PGVECTOR_MAX_DOCUMENT_BATCH_SIZE:10000}
+
+security:
+  scopes:
+    search:
+      semantic: ${SECURITY_SCOPE_SEARCH_SEMANTIC:search.semantic}
+    resources:
+      read: ${SECURITY_SCOPE_RESOURCES_READ:resources.read}
+      write: ${SECURITY_SCOPE_RESOURCES_WRITE:resources.write}
+      delete: ${SECURITY_SCOPE_RESOURCES_DELETE:resources.delete}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:8080,http://localhost:9000}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers}
+    exposed-headers: ${CORS_EXPOSED_HEADERS:Access-Control-Allow-Origin,Access-Control-Allow-Credentials}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
+    max-age: ${CORS_MAX_AGE:3600}
+
+content:
+  download:
+    timeout-seconds: ${CONTENT_DOWNLOAD_TIMEOUT:30}
+    connect-timeout-seconds: ${CONTENT_DOWNLOAD_CONNECT_TIMEOUT:10}
 
 server:
   port: ${SERVER_PORT:8080}

@@ -186,6 +186,36 @@ curl http://localhost:8080/api/v1/resources/{resource-id}
 - `SPRING_DATASOURCE_USERNAME` : Utilisateur PostgreSQL
 - `SPRING_DATASOURCE_PASSWORD` : Mot de passe PostgreSQL
 
+### Configuration CORS
+
+La configuration CORS est externalisée dans les fichiers `application.yml` et peut être personnalisée pour chaque environnement.
+
+#### Variables d'environnement CORS disponibles :
+- `CORS_ALLOWED_ORIGINS` : Origines autorisées (séparées par des virgules)
+- `CORS_ALLOWED_METHODS` : Méthodes HTTP autorisées
+- `CORS_ALLOWED_HEADERS` : En-têtes autorisés
+- `CORS_EXPOSED_HEADERS` : En-têtes exposés au client
+- `CORS_ALLOW_CREDENTIALS` : Autoriser les credentials (true/false)
+- `CORS_MAX_AGE` : Durée de cache de la pré-vérification (en secondes)
+
+#### Exemple de configuration pour production :
+```bash
+export CORS_ALLOWED_ORIGINS=https://monapp.com,https://www.monapp.com
+export CORS_ALLOW_CREDENTIALS=true
+```
+
+#### Configuration dans application.yml :
+```yaml
+security:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:4200
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type,X-Requested-With,Accept,Origin
+    exposed-headers: Access-Control-Allow-Origin,Access-Control-Allow-Credentials
+    allow-credentials: false
+    max-age: 3600
+```
+
 ### Personnalisation
 - Taille des chunks : Modifiez `DEFAULT_CHUNK_SIZE` dans `ResourceServiceImpl`
 - Modèle d'embedding : Changez `spring.ai.openai.embedding.model`
@@ -208,3 +238,6 @@ curl http://localhost:8080/api/v1/resources/{resource-id}
 docker build -t vectopath .
 docker run -p 8080:8080 vectopath
 ```
+# TODO
+- Ajouter une gestion de sécurité (authentification, autorisation)
+- Implémenter des fonctionnalités de logging et monitoring avancées
