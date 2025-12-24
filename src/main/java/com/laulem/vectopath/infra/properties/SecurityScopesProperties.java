@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.security;
+package com.laulem.vectopath.infra.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

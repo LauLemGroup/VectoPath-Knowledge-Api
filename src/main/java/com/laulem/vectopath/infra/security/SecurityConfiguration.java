@@ -1,6 +1,7 @@
 package com.laulem.vectopath.infra.security;
 
-import com.laulem.vectopath.infra.conf.CorsProperties;
+import com.laulem.vectopath.infra.properties.CorsProperties;
+import com.laulem.vectopath.infra.conf.mdc.MdcUserFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -46,6 +48,7 @@ public class SecurityConfiguration {
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(securityExceptionHandler)
                 )
+                .addFilterAfter(new MdcUserFilter(), BearerTokenAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(securityExceptionHandler)
                         .accessDeniedHandler(securityExceptionHandler)

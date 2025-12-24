@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <contextName>${HOSTNAME}</contextName>
+    <property name="LOGS" value="./logs"/>
+
+    <appender name="Console"
+              class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>
+                [%black(%d{ISO8601})] [%X{transaction.id}] [%highlight(%level)] [%blue(%t)] [%yellow(%C)] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{goal.log}] [%msg%throwable]%n
+            </Pattern>
+        </encoder>
+    </appender>
+
+    <appender name="RollingFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS}/spring-boot-logger.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>[%d{ISO8601}] [%X{transaction.id}] [%level] [%t] [%C] [%M] [%line] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{goal.log}] [%msg%throwable]%n
+            </Pattern>
+        </encoder>
+
+        <!-- rollover daily and when the file reaches 100 MegaBytes -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/archived/spring-boot-logger-%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>500</maxHistory>
+            <totalSizeCap>20GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- LOG everything at INFO level -->
+    <root level="info">
+        <appender-ref ref="RollingFile"/>
+        <appender-ref ref="Console"/>
+    </root>
+
+    <logger name="com.laulem" level="trace" additivity="false">
+        <appender-ref ref="RollingFile"/>
+        <appender-ref ref="Console"/>
+    </logger>
+</configuration>
