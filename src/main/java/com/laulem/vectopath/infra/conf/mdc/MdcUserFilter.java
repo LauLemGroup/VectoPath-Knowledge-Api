@@ -12,13 +12,10 @@ import java.io.IOException;
 
 public class MdcUserFilter extends OncePerRequestFilter {
 
-    private static final String TRANSACTION_USER = "transaction.user";
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        MDC.put(TRANSACTION_USER, UserTools.getUsername());
+        MDC.put(MDCConstant.TRANSACTION_USER, UserTools.getUsername());
 
         filterChain.doFilter(request, response);
     }
 }
-

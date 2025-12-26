@@ -18,7 +18,6 @@ import java.time.Duration;
 
 @Service
 public class ContentDownloadService implements ContentDownloaderService {
-
     private static final Logger logger = LoggerFactory.getLogger(ContentDownloadService.class);
     private final HttpClient httpClient;
     private final int timeoutSeconds;

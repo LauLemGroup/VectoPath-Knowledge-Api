@@ -7,7 +7,7 @@
               class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <Pattern>
-                [%black(%d{ISO8601})] [%X{transaction.id}] [%highlight(%level)] [%blue(%t)] [%yellow(%C)] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{goal.log}] [%msg%throwable]%n
+                [%black(%d{ISO8601})] [%X{transaction.id}] [%highlight(%level)] [%blue(%t)] [%yellow(%C)] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{transaction.duration}] [%msg%throwable]%n
             </Pattern>
         </encoder>
     </appender>
@@ -16,7 +16,7 @@
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGS}/spring-boot-logger.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <Pattern>[%d{ISO8601}] [%X{transaction.id}] [%level] [%t] [%C] [%M] [%line] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{goal.log}] [%msg%throwable]%n
+            <Pattern>[%d{ISO8601}] [%X{transaction.id}] [%level] [%t] [%C] [%M] [%line] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{transaction.duration}] [%msg%throwable]%n
             </Pattern>
         </encoder>
 

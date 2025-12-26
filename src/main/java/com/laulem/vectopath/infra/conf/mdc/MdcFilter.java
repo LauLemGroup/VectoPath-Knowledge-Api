@@ -17,25 +17,19 @@ import java.util.UUID;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class MdcFilter extends OncePerRequestFilter {
-
-    private static final String TRANSACTION_ID = "transaction.id";
-    private static final String TRANSACTION_IP = "transaction.ip";
-    private static final String TRANSACTION_USER = "transaction.user";
-    private static final String TRANSACTION_PATH = "transaction.path";
-    private static final String TRANSACTION_QUERY = "transaction.query";
-    private static final String TRANSACTION_STATUS = "transaction.status";
-    private static final String GOAL_LOG = "goal.log";
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        long startTime = System.currentTimeMillis();
         try {
             populateMdc(request);
             logger.info("Starting request processing");
 
             filterChain.doFilter(request, response);
 
-            MDC.put(TRANSACTION_STATUS, String.valueOf(response.getStatus()));
+            long duration = System.currentTimeMillis() - startTime;
+            MDC.put(MDCConstant.TRANSACTION_STATUS, String.valueOf(response.getStatus()));
+            MDC.put(MDCConstant.TRANSACTION_DURATION, String.valueOf(duration));
             logger.info("End request processing");
         } finally {
             clearMdc();
@@ -43,22 +37,21 @@ public class MdcFilter extends OncePerRequestFilter {
     }
 
     private void populateMdc(HttpServletRequest request) {
-        MDC.put(TRANSACTION_ID, UUID.randomUUID().toString());
-        MDC.put(TRANSACTION_IP, UserTools.getIpAddr(request));
-        MDC.put(TRANSACTION_PATH, request.getRequestURI());
-        MDC.put(TRANSACTION_QUERY, request.getQueryString());
-        MDC.put(TRANSACTION_STATUS, "");
-        MDC.put(GOAL_LOG, "");
+        MDC.put(MDCConstant.TRANSACTION_ID, UUID.randomUUID().toString());
+        MDC.put(MDCConstant.TRANSACTION_IP, UserTools.getIpAddr(request));
+        MDC.put(MDCConstant.TRANSACTION_PATH, request.getRequestURI());
+        MDC.put(MDCConstant.TRANSACTION_QUERY, request.getQueryString());
+        MDC.put(MDCConstant.TRANSACTION_STATUS, "");
     }
 
     private void clearMdc() {
-        MDC.remove(TRANSACTION_ID);
-        MDC.remove(TRANSACTION_IP);
-        MDC.remove(TRANSACTION_USER);
-        MDC.remove(TRANSACTION_PATH);
-        MDC.remove(TRANSACTION_QUERY);
-        MDC.remove(TRANSACTION_STATUS);
-        MDC.remove(GOAL_LOG);
+        MDC.remove(MDCConstant.TRANSACTION_ID);
+        MDC.remove(MDCConstant.TRANSACTION_IP);
+        MDC.remove(MDCConstant.TRANSACTION_USER);
+        MDC.remove(MDCConstant.TRANSACTION_PATH);
+        MDC.remove(MDCConstant.TRANSACTION_QUERY);
+        MDC.remove(MDCConstant.TRANSACTION_STATUS);
+        MDC.remove(MDCConstant.TRANSACTION_DURATION);
         MDC.clear();
     }
 }
