@@ -21,14 +21,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Table resources: Store resource metadata
 -- ====================================================================
 CREATE TABLE resources (
-                           id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-                           name varchar(255) NOT NULL,
-                           content text NOT NULL,
-                           content_type varchar(100),
-                           status varchar(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PROCESSING', 'VECTORIZED', 'ERROR')),
-                           metadata json,
-                           created_at TIMESTAMPTZ DEFAULT now(),
-                           updated_at TIMESTAMPTZ DEFAULT now()
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name varchar(255) NOT NULL,
+    content text NOT NULL,
+    content_type varchar(100),
+    status varchar(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PROCESSING', 'VECTORIZED', 'ERROR')),
+    metadata json,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Indexes to optimize queries on resources table
@@ -40,13 +40,13 @@ CREATE INDEX resources_created_at_idx ON resources(created_at DESC);
 -- Table vector_store: Required by Spring AI Vector Store
 -- ====================================================================
 CREATE TABLE IF NOT EXISTS vector_store (
-                                            id text PRIMARY KEY,
-                                            content text NOT NULL,
-                                            metadata jsonb,
-                                            embedding vector(1536)
+    id text PRIMARY KEY,
+    content text NOT NULL,
+    metadata jsonb,
+    embedding vector(1536)
 );
 
 -- HNSW index for optimized vector searches
 CREATE INDEX IF NOT EXISTS vector_store_embedding_idx ON vector_store
-    USING hnsw (embedding vector_cosine_ops)
-    WITH (m = 16, ef_construction = 64);
+USING hnsw (embedding vector_cosine_ops)
+WITH (m = 16, ef_construction = 64);
