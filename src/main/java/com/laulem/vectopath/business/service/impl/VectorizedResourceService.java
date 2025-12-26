@@ -1,6 +1,6 @@
 package com.laulem.vectopath.business.service.impl;
 
-import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ public class VectorizedResourceService {
         vectorRepository.addResource(resource);
     }
 
-    public List<DocumentChunk> searchSimilar(String query, int limit) {
+    public List<PartialResource> searchSimilar(String query, int limit) {
         logger.info("Semantic search for: {}", query);
         return vectorRepository.searchSimilar(query, limit);
     }

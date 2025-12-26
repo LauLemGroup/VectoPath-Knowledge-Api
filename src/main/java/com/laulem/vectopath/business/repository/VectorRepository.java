@@ -1,6 +1,6 @@
 package com.laulem.vectopath.business.repository;
 
-import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 
 import java.util.List;
@@ -10,9 +10,7 @@ public interface VectorRepository {
 
     void addResource(Resource resource);
 
-    List<DocumentChunk> searchSimilar(String query, int limit);
-
-    List<DocumentChunk> getChunksByResourceId(UUID resourceId);
+    List<PartialResource> searchSimilar(String query, int limit);
 
     void deleteResource(UUID resourceId);
 

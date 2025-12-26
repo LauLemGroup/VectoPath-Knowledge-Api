@@ -84,7 +84,7 @@ public class ResourceEntity {
         return resource;
     }
 
-    // Getters et Setters
+    // Getters & Setters
     public UUID getId() {
         return id;
     }

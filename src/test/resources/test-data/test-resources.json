@@ -1,0 +1,10 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "test.txt",
+    "content": "Java is a popular programming language used for building enterprise applications. Spring Boot simplifies the development of Spring applications with auto-configuration. PostgreSQL with pgvector extension enables vector similarity search.",
+    "contentType": "text/plain",
+    "status": "VECTORIZED",
+    "metadata": "{\"test\":\"data\"}"
+  }
+]

@@ -1,8 +1,6 @@
 package com.laulem.vectopath.infra.repository;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.laulem.vectopath.business.model.DocumentChunk;
+import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
 import com.laulem.vectopath.infra.repository.exception.VectorStoreAdditionException;
@@ -18,7 +16,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +29,6 @@ public class VectorStoreRepository implements VectorRepository {
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
     private final EmbeddingModel embeddingModel;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
 
     public VectorStoreRepository(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
@@ -66,7 +62,7 @@ public class VectorStoreRepository implements VectorRepository {
         }
     }
 
-    public List<DocumentChunk> searchSimilar(String query, int limit) {
+    public List<PartialResource> searchSimilar(String query, int limit) {
         try {
             float[] vector = embeddingModel.embed(query);
 
@@ -79,7 +75,22 @@ public class VectorStoreRepository implements VectorRepository {
             }
             pgVector.setValue(vectorStr.append("]").toString());
 
-            String sql = "SELECT id, content, metadata FROM vector_store WHERE metadata->>'chunk_type' = 'content' ORDER BY embedding <=> ? LIMIT ?";
+            String sql = """
+                    SELECT
+                        v.id as vector_id,
+                        v.content,
+                        r.id as resource_id,
+                        r.name as resource_name,
+                        r.content_type,
+                        r.metadata,
+                        r.created_at,
+                        r.updated_at
+                    FROM vector_store v
+                    INNER JOIN resources r ON (v.metadata->>'resource_id')::uuid = r.id
+                    WHERE v.metadata->>'chunk_type' = 'content'
+                    ORDER BY v.embedding <=> ?
+                    LIMIT ?
+                    """;
 
             return jdbcTemplate.query(
                     conn -> {
@@ -88,27 +99,24 @@ public class VectorStoreRepository implements VectorRepository {
                         ps.setInt(2, limit);
                         return ps;
                     },
-                    (rs, rowNum) -> convertToDocumentChunk(
-                            rs.getString("id"),
-                            rs.getString("content"),
-                            parseMetadata(rs.getString("metadata"))
-                    )
+                    (rs, rowNum) -> {
+                        PartialResource partialResource = new PartialResource();
+                        partialResource.setVectorId(UUID.fromString(rs.getString("vector_id")));
+                        partialResource.setContent(rs.getString("content"));
+                        partialResource.setResourceId(UUID.fromString(rs.getString("resource_id")));
+                        partialResource.setResourceName(rs.getString("resource_name"));
+                        partialResource.setContentType(rs.getString("content_type"));
+                        partialResource.setMetadata(rs.getString("metadata"));
+                        partialResource.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                        partialResource.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+                        return partialResource;
+                    }
             );
 
         } catch (Exception e) {
             logger.error("Error during semantic search", e);
             return List.of();
         }
-    }
-
-    public List<DocumentChunk> getChunksByResourceId(UUID resourceId) {
-        String sql = "SELECT id, content, metadata FROM vector_store WHERE metadata->>'resource_id' = ? AND metadata->>'chunk_type' = 'content' ORDER BY id";
-
-        return jdbcTemplate.query(sql, (rs, rowNum) -> convertToDocumentChunk(
-                rs.getString("id"),
-                rs.getString("content"),
-                parseMetadata(rs.getString("metadata"))
-        ), resourceId.toString());
     }
 
     public void deleteResource(UUID resourceId) {
@@ -135,38 +143,5 @@ public class VectorStoreRepository implements VectorRepository {
             logger.error("Error during verification: {}", e.getMessage());
             return false;
         }
-    }
-
-    private Map<String, Object> parseMetadata(String json) {
-        try {
-            return objectMapper.readValue(json, new TypeReference<>() {
-            });
-        } catch (Exception e) {
-            return Map.of();
-        }
-    }
-
-    private DocumentChunk convertToDocumentChunk(String id, String content, Map<String, Object> metadata) {
-        DocumentChunk chunk = new DocumentChunk();
-
-        try {
-            chunk.setId(UUID.fromString(id));
-        } catch (Exception e) {
-            chunk.setId(UUID.randomUUID());
-        }
-
-        chunk.setResourceId(UUID.fromString(metadata.get("resource_id").toString()));
-        chunk.setContent(content);
-        chunk.setCreatedAt(LocalDateTime.now());
-
-        chunk.setMetadata(String.format(
-                "{\"resourceId\":\"%s\",\"resourceName\":\"%s\",\"contentType\":\"%s\",\"status\":\"%s\"}",
-                metadata.get("resource_id"),
-                metadata.get("resource_name"),
-                metadata.get("content_type"),
-                metadata.get("status")
-        ));
-
-        return chunk;
     }
 }

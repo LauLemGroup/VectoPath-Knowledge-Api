@@ -1,57 +1,36 @@
-package com.laulem.vectopath.client.dto;
+package com.laulem.vectopath.business.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.laulem.vectopath.business.model.PartialResource;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SearchResponse {
-
-    @JsonProperty("vector_id")
+public class PartialResource {
     private UUID vectorId;
-
-    @JsonProperty("resource_id")
-    private UUID resourceId;
-
-    @JsonProperty("resource_name")
-    private String resourceName;
-
-    @JsonProperty("content")
     private String content;
-
-    @JsonProperty("content_type")
+    private UUID resourceId;
+    private String resourceName;
     private String contentType;
-
-
-    @JsonProperty("metadata")
     private String metadata;
-
-    @JsonProperty("created_at")
     private LocalDateTime createdAt;
-
-    @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 
-    public SearchResponse(PartialResource partialResource) {
-        this.vectorId = partialResource.getVectorId();
-        this.resourceId = partialResource.getResourceId();
-        this.resourceName = partialResource.getResourceName();
-        this.content = partialResource.getContent();
-        this.contentType = partialResource.getContentType();
-        this.metadata = partialResource.getMetadata();
-        this.createdAt = partialResource.getCreatedAt();
-        this.updatedAt = partialResource.getUpdatedAt();
-    }
-
+    // Getters & Setters
     public UUID getVectorId() {
         return vectorId;
     }
 
     public void setVectorId(UUID vectorId) {
         this.vectorId = vectorId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public UUID getResourceId() {
@@ -68,14 +47,6 @@ public class SearchResponse {
 
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
     }
 
     public String getContentType() {

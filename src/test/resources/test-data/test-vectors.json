@@ -1,0 +1,22 @@
+[
+  {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "content": "Java is a popular programming language used for building enterprise applications.",
+    "metadata": "{\"resource_id\":\"550e8400-e29b-41d4-a716-446655440000\",\"resource_name\":\"test.txt\",\"content_type\":\"text/plain\",\"status\":\"VECTORIZED\",\"chunk_type\":\"content\"}"
+  },
+  {
+    "id": "660e8400-e29b-41d4-a716-446655440002",
+    "content": "Java is a popular programming language used for building enterprise applications.",
+    "metadata": "{\"resource_id\":\"550e8400-e29b-41d4-a716-446655440000\",\"resource_name\":\"test.txt\",\"content_type\":\"text/plain\",\"status\":\"VECTORIZED\",\"chunk_type\":\"content\"}"
+  },
+  {
+    "id": "660e8400-e29b-41d4-a716-446655440003",
+    "content": "Spring Boot simplifies the development of Spring applications with auto-configuration.",
+    "metadata": "{\"resource_id\":\"550e8400-e29b-41d4-a716-446655440000\",\"resource_name\":\"test.txt\",\"content_type\":\"text/plain\",\"status\":\"VECTORIZED\",\"chunk_type\":\"content\"}"
+  },
+  {
+    "id": "660e8400-e29b-41d4-a716-446655440004",
+    "content": "PostgreSQL with pgvector extension enables vector similarity search.",
+    "metadata": "{\"resource_id\":\"550e8400-e29b-41d4-a716-446655440000\",\"resource_name\":\"test.txt\",\"content_type\":\"text/plain\",\"status\":\"VECTORIZED\",\"chunk_type\":\"content\"}"
+  }
+]
