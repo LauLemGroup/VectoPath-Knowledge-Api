@@ -4,21 +4,28 @@ import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.repository.ResourceRepository;
 import com.laulem.vectopath.business.service.AuthenticationService;
+import com.laulem.vectopath.infra.entity.ResourceEntity;
+import com.laulem.vectopath.infra.entity.RoleEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Repository
 public class ResourceRepositoryImpl implements ResourceRepository {
 
     private final ResourceJpaRepository jpaRepository;
+    private final RoleJpaRepository roleJpaRepository;
     private final AuthenticationService authenticationService;
 
-    public ResourceRepositoryImpl(ResourceJpaRepository jpaRepository, AuthenticationService authenticationService) {
+    public ResourceRepositoryImpl(ResourceJpaRepository jpaRepository,
+                                 RoleJpaRepository roleJpaRepository,
+                                 AuthenticationService authenticationService) {
         this.jpaRepository = jpaRepository;
+        this.roleJpaRepository = roleJpaRepository;
         this.authenticationService = authenticationService;
     }
 
@@ -26,9 +33,19 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Transactional
     public Resource save(Resource resource) {
         ResourceEntity entity = ResourceEntity.fromDomain(resource);
+        entity.setAllowedRoles(getRoleEntities(resource));
+
         ResourceEntity savedEntity = jpaRepository.save(entity);
-        
+
         return savedEntity.toDomain();
+    }
+
+    private List<RoleEntity> getRoleEntities(Resource resource) {
+        return Stream.ofNullable(resource.getAllowedRoles())
+                .flatMap(List::stream)
+                .map(roleJpaRepository::findByRoleName)
+                .flatMap(Optional::stream)
+                .toList();
     }
 
     @Override

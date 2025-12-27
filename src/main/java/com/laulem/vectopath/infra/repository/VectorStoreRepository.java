@@ -62,7 +62,7 @@ public class VectorStoreRepository implements VectorRepository {
         }
     }
 
-    public List<PartialResource> searchSimilar(String query, int limit) {
+    public List<PartialResource> searchSimilar(String query, int limit, String currentUser, List<String> userAuthorities) {
         try {
             float[] vector = embeddingModel.embed(query);
 
@@ -88,6 +88,19 @@ public class VectorStoreRepository implements VectorRepository {
                     FROM vector_store v
                     INNER JOIN resources r ON (v.metadata->>'resource_id')::uuid = r.id
                     WHERE v.metadata->>'chunk_type' = 'content'
+                    AND v.id IN (
+                        SELECT v2.id
+                        FROM vector_store v2
+                        INNER JOIN resources r2 ON (v2.metadata->>'resource_id')::uuid = r2.id
+                        LEFT JOIN resource_allowed_roles rar ON r2.id = rar.resource_id AND r2.access_level = 'ROLE_LIST'
+                        LEFT JOIN app_roles ar ON rar.role_id = ar.id
+                        WHERE v2.metadata->>'chunk_type' = 'content'
+                        AND (
+                            r2.access_level = 'PUBLIC'
+                            OR (r2.access_level = 'PRIVATE' AND r2.created_by = ?)
+                            OR (r2.access_level = 'ROLE_LIST' AND ar.role_name = ANY(?))
+                        )
+                    )
                     ORDER BY v.embedding <=> ?
                     LIMIT ?
                     """;
@@ -95,8 +108,10 @@ public class VectorStoreRepository implements VectorRepository {
             return jdbcTemplate.query(
                     conn -> {
                         PreparedStatement ps = conn.prepareStatement(sql);
-                        ps.setObject(1, pgVector);
-                        ps.setInt(2, limit);
+                        ps.setObject(1, currentUser);
+                        ps.setArray(2, conn.createArrayOf("text", userAuthorities != null ? userAuthorities.toArray() : new String[0]));
+                        ps.setObject(3, pgVector);
+                        ps.setInt(4, limit);
                         return ps;
                     },
                     (rs, rowNum) -> {

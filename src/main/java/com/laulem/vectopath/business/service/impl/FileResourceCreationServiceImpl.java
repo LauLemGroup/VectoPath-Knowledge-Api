@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-
 @Service
 public class FileResourceCreationServiceImpl implements FileResourceCreationService {
 
@@ -25,19 +23,19 @@ public class FileResourceCreationServiceImpl implements FileResourceCreationServ
 
     @Override
     public Resource createFromFileContent(Resource resource) {
-        validateInput(resource, fileContent);
+        validateInput(resource, resource.getContent());
         logger.info("Creating resource from file: {}", resource.getSourceName());
         resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
 
         return resourceService.createResource(resource);
     }
 
-    private void validateInput(Resource resource, byte[] fileContent) {
+    private void validateInput(Resource resource, String fileContent) {
         if (Strings.isBlank(resource.getName())) {
             throw new ParamException("REQUIRED", "Resource name is required", "name");
         }
 
-        if (fileContent == null || fileContent.length == 0) {
+        if (Strings.isBlank(fileContent)) {
             throw new ParamException("REQUIRED", "File is required for FILE resource type", "file");
         }
 

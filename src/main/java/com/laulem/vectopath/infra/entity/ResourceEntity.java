@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.repository;
+package com.laulem.vectopath.infra.entity;
 
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
@@ -6,15 +6,20 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,9 +62,13 @@ public class ResourceEntity {
     @Column(name = "access_level", nullable = false)
     private Resource.AccessLevel accessLevel;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "allowed_roles", columnDefinition = "json")
-    private List<String> allowedRoles;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "resource_allowed_roles",
+            joinColumns = @JoinColumn(name = "resource_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private List<RoleEntity> allowedRoles = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -89,7 +98,6 @@ public class ResourceEntity {
         entity.sourceName = resource.getSourceName();
         entity.createdBy = resource.getCreatedBy();
         entity.accessLevel = resource.getAccessLevel();
-        entity.allowedRoles = resource.getAllowedRoles();
         entity.createdAt = resource.getCreatedAt();
         entity.updatedAt = resource.getUpdatedAt();
         return entity;
@@ -107,7 +115,11 @@ public class ResourceEntity {
         resource.setSourceName(this.sourceName);
         resource.setCreatedBy(this.createdBy);
         resource.setAccessLevel(this.accessLevel);
-        resource.setAllowedRoles(this.allowedRoles);
+        resource.setAllowedRoles(
+                this.allowedRoles.stream()
+                        .map(RoleEntity::getRoleName)
+                        .toList()
+        );
         resource.setCreatedAt(this.createdAt);
         resource.setUpdatedAt(this.updatedAt);
         return resource;
@@ -194,11 +206,11 @@ public class ResourceEntity {
         this.accessLevel = accessLevel;
     }
 
-    public List<String> getAllowedRoles() {
+    public List<RoleEntity> getAllowedRoles() {
         return allowedRoles;
     }
 
-    public void setAllowedRoles(List<String> allowedRoles) {
+    public void setAllowedRoles(List<RoleEntity> allowedRoles) {
         this.allowedRoles = allowedRoles;
     }
 

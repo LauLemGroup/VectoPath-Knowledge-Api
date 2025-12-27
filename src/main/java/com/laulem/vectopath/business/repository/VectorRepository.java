@@ -10,7 +10,7 @@ public interface VectorRepository {
 
     void addResource(Resource resource);
 
-    List<PartialResource> searchSimilar(String query, int limit);
+    List<PartialResource> searchSimilar(String query, int limit, String currentUser, List<String> userAuthorities);
 
     void deleteResource(UUID resourceId);
 
