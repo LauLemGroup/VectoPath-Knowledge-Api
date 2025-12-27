@@ -6,5 +6,5 @@ import java.io.IOException;
 
 public interface UrlResourceCreationService {
 
-    Resource createFromUrl(String name, String url, String metadata) throws IOException;
+    Resource createFromUrl(Resource resource) throws IOException;
 }

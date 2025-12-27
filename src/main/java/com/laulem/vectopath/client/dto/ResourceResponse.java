@@ -5,6 +5,7 @@ import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class ResourceResponse {
@@ -24,6 +25,21 @@ public class ResourceResponse {
     @JsonProperty("metadata")
     private String metadata;
 
+    @JsonProperty("source_type")
+    private Resource.SourceType sourceType;
+
+    @JsonProperty("source_name")
+    private String sourceName;
+
+    @JsonProperty("created_by")
+    private String createdBy;
+
+    @JsonProperty("access_level")
+    private Resource.AccessLevel accessLevel;
+
+    @JsonProperty("allowed_roles")
+    private List<String> allowedRoles;
+
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
@@ -36,6 +52,11 @@ public class ResourceResponse {
         this.contentType = resource.getContentType();
         this.status = resource.getStatus();
         this.metadata = resource.getMetadata();
+        this.sourceType = resource.getSourceType();
+        this.sourceName = resource.getSourceName();
+        this.createdBy = resource.getCreatedBy();
+        this.accessLevel = resource.getAccessLevel();
+        this.allowedRoles = resource.getAllowedRoles();
         this.createdAt = resource.getCreatedAt();
         this.updatedAt = resource.getUpdatedAt();
     }

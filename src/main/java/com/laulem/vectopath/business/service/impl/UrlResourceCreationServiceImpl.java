@@ -27,19 +27,23 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
     }
 
     @Override
-    public Resource createFromUrl(String name, String url, String metadata) throws IOException {
-        validateInput(name, url);
-        logger.info("Creating resource from URL: {}", url);
-        String content = contentDownloaderService.downloadContent(url.trim());
-        return resourceService.createResource(name.trim(), content, MediaType.TEXT_PLAIN_VALUE, metadata);
+    public Resource createFromUrl(Resource resource) throws IOException {
+        validateInput(resource);
+        logger.info("Creating resource from URL: {}", resource.getSourceName());
+
+        String content = contentDownloaderService.downloadContent(resource.getSourceName().trim());
+        resource.setContent(content);
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
+
+        return resourceService.createResource(resource);
     }
 
-    private void validateInput(String name, String url) {
-        if (Strings.isBlank(name)) {
+    private void validateInput(Resource resource) {
+        if (Strings.isBlank(resource.getName())) {
             throw new ParamException("REQUIRED", "Resource name is required", "name");
         }
 
-        if (Strings.isBlank(url)) {
+        if (Strings.isBlank(resource.getSourceName())) {
             throw new ParamException("REQUIRED", "URL is required for URL resource type", "url");
         }
     }

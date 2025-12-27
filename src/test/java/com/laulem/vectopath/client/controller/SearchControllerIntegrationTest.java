@@ -74,7 +74,7 @@ class SearchControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].vector_id", notNullValue()))
                 .andExpect(jsonPath("$[0].content", notNullValue()))
                 .andExpect(jsonPath("$[0].resource_id", is("550e8400-e29b-41d4-a716-446655440000")))
-                .andExpect(jsonPath("$[0].resource_name", is("test.txt")))
+                .andExpect(jsonPath("$[0].resource_name", is("test")))
                 .andExpect(jsonPath("$[0].content_type", is("text/plain")))
                 .andExpect(jsonPath("$[0].metadata", notNullValue()))
                 .andExpect(jsonPath("$[0].created_at", notNullValue()))

@@ -1,6 +1,7 @@
 package com.laulem.vectopath.client.controller;
 
 import com.laulem.vectopath.business.exception.NotFoundException;
+import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
@@ -58,9 +59,11 @@ public class ResourceController {
     public ResourceResponse createResourceFromFile(
             @RequestPart("file") MultipartFile file,
             @RequestParam("name") String name,
-            @RequestParam(value = "metadata", required = false) String metadata) throws IOException {
+            @RequestParam(value = "metadata", required = false) String metadata,
+            @RequestParam(value = "access_level", required = false) Resource.AccessLevel accessLevel,
+            @RequestParam(value = "allowed_roles", required = false) List<String> allowedRoles) throws IOException {
         logger.info("Creating resource from file: {} with name: {}", file.getOriginalFilename(), name);
-        CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, null, metadata);
+        CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, null, metadata, accessLevel, allowedRoles);
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, file));
     }
 

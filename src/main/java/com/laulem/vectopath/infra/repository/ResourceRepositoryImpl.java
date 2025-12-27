@@ -3,6 +3,7 @@ package com.laulem.vectopath.infra.repository;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.repository.ResourceRepository;
+import com.laulem.vectopath.business.service.AuthenticationService;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +15,11 @@ import java.util.UUID;
 public class ResourceRepositoryImpl implements ResourceRepository {
 
     private final ResourceJpaRepository jpaRepository;
+    private final AuthenticationService authenticationService;
 
-    public ResourceRepositoryImpl(ResourceJpaRepository jpaRepository) {
+    public ResourceRepositoryImpl(ResourceJpaRepository jpaRepository, AuthenticationService authenticationService) {
         this.jpaRepository = jpaRepository;
+        this.authenticationService = authenticationService;
     }
 
     @Override
@@ -31,32 +34,69 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Override
     @Transactional(readOnly = true)
     public Optional<Resource> findById(UUID id) {
-        return jpaRepository.findById(id)
-                .map(ResourceEntity::toDomain);
+        String username = authenticationService.getUser().orElse(null);
+        List<String> userRoles = authenticationService.getAuthorities();
+
+        List<ResourceEntity> results = jpaRepository.findWithAccessControl(
+            id.toString(),
+            null,
+            null,
+            username,
+            userRoles.toArray(new String[0])
+        );
+
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0).toDomain());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Resource> findAll() {
-        return jpaRepository.findAll().stream()
-                .map(ResourceEntity::toDomain)
-                .toList();
+        String username = authenticationService.getUser().orElse(null);
+        List<String> userRoles = authenticationService.getAuthorities();
+
+        return jpaRepository.findWithAccessControl(
+            null,
+            null,
+            null,
+            username,
+            userRoles.toArray(new String[0])
+        ).stream()
+        .map(ResourceEntity::toDomain)
+        .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Resource> findByStatus(ResourceStatus status) {
-        return jpaRepository.findByStatus(status).stream()
-                .map(ResourceEntity::toDomain)
-                .toList();
+        String username = authenticationService.getUser().orElse(null);
+        List<String> userRoles = authenticationService.getAuthorities();
+
+        return jpaRepository.findWithAccessControl(
+            null,
+            status.name(),
+            null,
+            username,
+            userRoles.toArray(new String[0])
+        ).stream()
+        .map(ResourceEntity::toDomain)
+        .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Resource> findByNameContainingIgnoreCase(String name) {
-        return jpaRepository.findByNameContainingIgnoreCase(name).stream()
-                .map(ResourceEntity::toDomain)
-                .toList();
+        String username = authenticationService.getUser().orElse(null);
+        List<String> userRoles = authenticationService.getAuthorities();
+
+        return jpaRepository.findWithAccessControl(
+            null,
+            null,
+            name,
+            username,
+            userRoles.toArray(new String[0])
+        ).stream()
+        .map(ResourceEntity::toDomain)
+        .toList();
     }
 
     @Override

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface ResourceService {
 
-    Resource createResource(String name, String content, String contentType, String metadata);
+    Resource createResource(Resource resource);
 
     Optional<Resource> getResourceById(UUID id);
 

@@ -15,6 +15,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -42,6 +43,24 @@ public class ResourceEntity {
     @Column(columnDefinition = "json")
     private String metadata;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type")
+    private Resource.SourceType sourceType;
+
+    @Column(name = "source_name")
+    private String sourceName;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "access_level", nullable = false)
+    private Resource.AccessLevel accessLevel;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "allowed_roles", columnDefinition = "json")
+    private List<String> allowedRoles;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -66,6 +85,11 @@ public class ResourceEntity {
         entity.contentType = resource.getContentType();
         entity.status = resource.getStatus();
         entity.metadata = resource.getMetadata();
+        entity.sourceType = resource.getSourceType();
+        entity.sourceName = resource.getSourceName();
+        entity.createdBy = resource.getCreatedBy();
+        entity.accessLevel = resource.getAccessLevel();
+        entity.allowedRoles = resource.getAllowedRoles();
         entity.createdAt = resource.getCreatedAt();
         entity.updatedAt = resource.getUpdatedAt();
         return entity;
@@ -79,6 +103,11 @@ public class ResourceEntity {
         resource.setContentType(this.contentType);
         resource.setStatus(this.status);
         resource.setMetadata(this.metadata);
+        resource.setSourceType(this.sourceType);
+        resource.setSourceName(this.sourceName);
+        resource.setCreatedBy(this.createdBy);
+        resource.setAccessLevel(this.accessLevel);
+        resource.setAllowedRoles(this.allowedRoles);
         resource.setCreatedAt(this.createdAt);
         resource.setUpdatedAt(this.updatedAt);
         return resource;
@@ -131,6 +160,46 @@ public class ResourceEntity {
 
     public void setMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    public Resource.SourceType getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(Resource.SourceType sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Resource.AccessLevel getAccessLevel() {
+        return accessLevel;
+    }
+
+    public void setAccessLevel(Resource.AccessLevel accessLevel) {
+        this.accessLevel = accessLevel;
+    }
+
+    public List<String> getAllowedRoles() {
+        return allowedRoles;
+    }
+
+    public void setAllowedRoles(List<String> allowedRoles) {
+        this.allowedRoles = allowedRoles;
     }
 
     public LocalDateTime getCreatedAt() {

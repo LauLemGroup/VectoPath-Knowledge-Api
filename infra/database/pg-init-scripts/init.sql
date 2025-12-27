@@ -27,6 +27,11 @@ CREATE TABLE resources (
                            content_type varchar(100),
                            status varchar(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PROCESSING', 'VECTORIZED', 'ERROR')),
                            metadata json,
+                           source_type varchar(20) CHECK (source_type IN ('TEXT', 'URL', 'FILE')),
+                           source_name varchar(500),
+                           created_by varchar(255),
+                           access_level varchar(20) NOT NULL DEFAULT 'PRIVATE' CHECK (access_level IN ('PUBLIC', 'PRIVATE', 'ROLE_LIST')),
+                           allowed_roles json,
                            created_at TIMESTAMPTZ DEFAULT now(),
                            updated_at TIMESTAMPTZ DEFAULT now()
 );

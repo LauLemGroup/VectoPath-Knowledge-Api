@@ -26,15 +26,18 @@ public class ResourceServiceImpl implements ResourceService {
     private final VectorRepository vectorRepository;
 
     public ResourceServiceImpl(ResourceRepository resourceRepository,
-                               VectorizedResourceService vectorizedResourceService, final VectorRepository vectorRepository) {
+                               VectorizedResourceService vectorizedResourceService,
+                               VectorRepository vectorRepository) {
         this.resourceRepository = resourceRepository;
         this.vectorizedResourceService = vectorizedResourceService;
         this.vectorRepository = vectorRepository;
     }
 
     @Override
-    public Resource createResource(String name, String content, String contentType, String metadata) {
-        Resource resource = new Resource(name, content, contentType, metadata);
+    public Resource createResource(Resource resource) {
+        if (resource.getAccessLevel() == null) {
+            resource.setAccessLevel(Resource.AccessLevel.PRIVATE);
+        }
         resource = resourceRepository.save(resource);
         resource = processResourceVectorization(resource);
         return resource;

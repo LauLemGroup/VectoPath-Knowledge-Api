@@ -24,15 +24,16 @@ public class FileResourceCreationServiceImpl implements FileResourceCreationServ
     }
 
     @Override
-    public Resource createFromFileContent(String name, byte[] fileContent, String originalFilename, String metadata) {
-        validateInput(name, fileContent, originalFilename);
-        logger.info("Creating resource from file: {}", originalFilename);
-        String content = new String(fileContent, StandardCharsets.UTF_8);
-        return resourceService.createResource(name.trim(), content, MediaType.TEXT_PLAIN_VALUE, metadata);
+    public Resource createFromFileContent(Resource resource) {
+        validateInput(resource, fileContent);
+        logger.info("Creating resource from file: {}", resource.getSourceName());
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
+
+        return resourceService.createResource(resource);
     }
 
-    private void validateInput(String name, byte[] fileContent, String originalFilename) {
-        if (Strings.isBlank(name)) {
+    private void validateInput(Resource resource, byte[] fileContent) {
+        if (Strings.isBlank(resource.getName())) {
             throw new ParamException("REQUIRED", "Resource name is required", "name");
         }
 
@@ -40,8 +41,9 @@ public class FileResourceCreationServiceImpl implements FileResourceCreationServ
             throw new ParamException("REQUIRED", "File is required for FILE resource type", "file");
         }
 
-        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".txt")) {
+        if (resource.getSourceName() == null || !resource.getSourceName().toLowerCase().endsWith(".txt")) {
             throw new ParamException("REQUIRED", "Only .txt files are accepted", "file");
         }
     }
 }
+

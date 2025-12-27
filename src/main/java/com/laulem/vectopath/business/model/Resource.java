@@ -1,6 +1,7 @@
 package com.laulem.vectopath.business.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class Resource {
@@ -10,8 +11,21 @@ public class Resource {
     private String contentType;
     private ResourceStatus status;
     private String metadata;
+    private SourceType sourceType;
+    private String sourceName;
+    private String createdBy;
+    private AccessLevel accessLevel;
+    private List<String> allowedRoles;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public enum SourceType {
+        TEXT, URL, FILE
+    }
+
+    public enum AccessLevel {
+        PUBLIC, PRIVATE, ROLE_LIST
+    }
 
     public Resource() {
         this.status = ResourceStatus.PENDING;
@@ -76,6 +90,46 @@ public class Resource {
         this.metadata = metadata;
     }
 
+    public SourceType getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(SourceType sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public AccessLevel getAccessLevel() {
+        return accessLevel;
+    }
+
+    public void setAccessLevel(AccessLevel accessLevel) {
+        this.accessLevel = accessLevel;
+    }
+
+    public List<String> getAllowedRoles() {
+        return allowedRoles;
+    }
+
+    public void setAllowedRoles(List<String> allowedRoles) {
+        this.allowedRoles = allowedRoles;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -92,3 +146,4 @@ public class Resource {
         this.updatedAt = updatedAt;
     }
 }
+

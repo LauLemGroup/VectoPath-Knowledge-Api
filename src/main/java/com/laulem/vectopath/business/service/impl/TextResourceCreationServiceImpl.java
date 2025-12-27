@@ -17,17 +17,19 @@ public class TextResourceCreationServiceImpl implements TextResourceCreationServ
     }
 
     @Override
-    public Resource createFromText(String name, String content, String metadata) {
-        validateInput(name, content);
-        return resourceService.createResource(name.trim(), content.trim(), MediaType.TEXT_PLAIN_VALUE, metadata);
+    public Resource createFromText(Resource resource) {
+        validateInput(resource);
+        resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
+
+        return resourceService.createResource(resource);
     }
 
-    private void validateInput(String name, String content) {
-        if (Strings.isBlank(name)) {
+    private void validateInput(Resource resource) {
+        if (Strings.isBlank(resource.getName())) {
             throw new ParamException("REQUIRED", "Resource name is required", "name");
         }
 
-        if (Strings.isBlank(content)) {
+        if (Strings.isBlank(resource.getContent())) {
             throw new ParamException("REQUIRED", "Content is required for TEXT resource type", "content");
         }
     }

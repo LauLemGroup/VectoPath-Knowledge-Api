@@ -48,8 +48,8 @@ public class TestDataLoader {
 
     private void insertResource(JsonNode resource) {
         String resourceSql = """
-                INSERT INTO resources (id, name, content, content_type, status, metadata, created_at, updated_at)
-                VALUES (?::uuid, ?, ?, ?, ?, ?::json, NOW(), NOW())
+                INSERT INTO resources (id, name, content, content_type, status, metadata, source_type, source_name, created_by, access_level, allowed_roles, created_at, updated_at)
+                VALUES (?::uuid, ?, ?, ?, ?, ?::json, ?, ?, ?, ?, ?::json, NOW(), NOW())
                 """;
 
         jdbcTemplate.update(resourceSql,
@@ -58,7 +58,12 @@ public class TestDataLoader {
                 resource.get("content").asText(),
                 resource.get("contentType").asText(),
                 resource.get("status").asText(),
-                resource.get("metadata").asText());
+                resource.get("metadata").asText(),
+                resource.has("sourceType") && !resource.get("sourceType").isNull() ? resource.get("sourceType").asText() : null,
+                resource.has("sourceName") && !resource.get("sourceName").isNull() ? resource.get("sourceName").asText() : null,
+                resource.has("createdBy") && !resource.get("createdBy").isNull() ? resource.get("createdBy").asText() : null,
+                resource.has("accessLevel") && !resource.get("accessLevel").isNull() ? resource.get("accessLevel").asText() : null,
+                resource.has("allowedRoles") && !resource.get("allowedRoles").isNull() ? resource.get("allowedRoles").asText() : null);
     }
 
     private void insertVector(JsonNode vector, String embeddingVector) {
