@@ -76,31 +76,28 @@ public class VectorStoreRepository implements VectorRepository {
             pgVector.setValue(vectorStr.append("]").toString());
 
             String sql = """
+                    WITH authorized_resources AS (
+                        SELECT DISTINCT ON (r.id) r.id, r.name, r.content_type, r.metadata, r.created_at, r.updated_at
+                        FROM resources r
+                        LEFT JOIN resource_allowed_roles rar ON r.id = rar.resource_id AND r.access_level = 'ROLE_LIST'
+                        LEFT JOIN app_roles ar ON rar.role_id = ar.id
+                        WHERE r.access_level = 'PUBLIC'
+                           OR (r.access_level = 'PRIVATE' AND r.created_by = ?)
+                           OR (r.access_level = 'ROLE_LIST' AND ar.role_name = ANY(?))
+                        ORDER BY r.id
+                    )
                     SELECT
                         v.id as vector_id,
                         v.content,
-                        r.id as resource_id,
-                        r.name as resource_name,
-                        r.content_type,
-                        r.metadata,
-                        r.created_at,
-                        r.updated_at
+                        ar.id as resource_id,
+                        ar.name as resource_name,
+                        ar.content_type,
+                        ar.metadata,
+                        ar.created_at,
+                        ar.updated_at
                     FROM vector_store v
-                    INNER JOIN resources r ON (v.metadata->>'resource_id')::uuid = r.id
+                    INNER JOIN authorized_resources ar ON (v.metadata->>'resource_id')::uuid = ar.id
                     WHERE v.metadata->>'chunk_type' = 'content'
-                    AND v.id IN (
-                        SELECT v2.id
-                        FROM vector_store v2
-                        INNER JOIN resources r2 ON (v2.metadata->>'resource_id')::uuid = r2.id
-                        LEFT JOIN resource_allowed_roles rar ON r2.id = rar.resource_id AND r2.access_level = 'ROLE_LIST'
-                        LEFT JOIN app_roles ar ON rar.role_id = ar.id
-                        WHERE v2.metadata->>'chunk_type' = 'content'
-                        AND (
-                            r2.access_level = 'PUBLIC'
-                            OR (r2.access_level = 'PRIVATE' AND r2.created_by = ?)
-                            OR (r2.access_level = 'ROLE_LIST' AND ar.role_name = ANY(?))
-                        )
-                    )
                     ORDER BY v.embedding <=> ?
                     LIMIT ?
                     """;

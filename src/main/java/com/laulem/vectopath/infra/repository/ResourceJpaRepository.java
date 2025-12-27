@@ -11,13 +11,13 @@ import java.util.UUID;
 public interface ResourceJpaRepository extends JpaRepository<ResourceEntity, UUID> {
 
     @Query(value = """
-            SELECT DISTINCT ON (r.id) r.* 
+            SELECT DISTINCT ON (r.id) r.*
             FROM resources r
             LEFT JOIN resource_allowed_roles rar ON r.id = rar.resource_id AND r.access_level = 'ROLE_LIST'
             LEFT JOIN app_roles ar ON rar.role_id = ar.id
             WHERE (:id IS NULL OR r.id = CAST(:id AS uuid))
             AND (:status IS NULL OR r.status = :status)
-            AND (:searchName IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :searchName, '%')))
+            AND (:searchName IS NULL OR LOWER(r.name) LIKE LOWER(:searchName))
             AND (
                 r.access_level = 'PUBLIC'
                 OR (r.access_level = 'PRIVATE' AND r.created_by = :username)
