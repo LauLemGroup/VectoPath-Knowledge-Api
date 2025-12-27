@@ -50,6 +50,8 @@ spring:
         max-document-batch-size: ${PGVECTOR_MAX_DOCUMENT_BATCH_SIZE:10000}
 
 security:
+  admin-role: ${SECURITY_ADMIN_ROLE:admin}
+  not-affectable-roles: ${SECURITY_NOT_AFFECTABLE_ROLES:admin,search.semantic}
   scopes:
     search:
       semantic: ${SECURITY_SCOPE_SEARCH_SEMANTIC:search.semantic}

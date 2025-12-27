@@ -4,6 +4,7 @@ import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.ContentDownloaderService;
 import com.laulem.vectopath.business.service.ResourceService;
+import com.laulem.vectopath.business.service.RoleValidationService;
 import com.laulem.vectopath.business.service.UrlResourceCreationService;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
@@ -20,10 +21,14 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
 
     private final ResourceService resourceService;
     private final ContentDownloaderService contentDownloaderService;
+    private final RoleValidationService roleValidationService;
 
-    public UrlResourceCreationServiceImpl(ResourceService resourceService, ContentDownloaderService contentDownloaderService) {
+    public UrlResourceCreationServiceImpl(ResourceService resourceService,
+                                          ContentDownloaderService contentDownloaderService,
+                                          RoleValidationService roleValidationService) {
         this.resourceService = resourceService;
         this.contentDownloaderService = contentDownloaderService;
+        this.roleValidationService = roleValidationService;
     }
 
     @Override
@@ -46,5 +51,7 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
         if (Strings.isBlank(resource.getSourceName())) {
             throw new ParamException("REQUIRED", "URL is required for URL resource type", "url");
         }
+
+        roleValidationService.validateAllowedRoles(resource.getAllowedRoles());
     }
 }

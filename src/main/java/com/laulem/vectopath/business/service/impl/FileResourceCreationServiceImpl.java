@@ -4,6 +4,7 @@ import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.FileResourceCreationService;
 import com.laulem.vectopath.business.service.ResourceService;
+import com.laulem.vectopath.business.service.RoleValidationService;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +17,12 @@ public class FileResourceCreationServiceImpl implements FileResourceCreationServ
     private static final Logger logger = LoggerFactory.getLogger(FileResourceCreationServiceImpl.class);
 
     private final ResourceService resourceService;
+    private final RoleValidationService roleValidationService;
 
-    public FileResourceCreationServiceImpl(ResourceService resourceService) {
+    public FileResourceCreationServiceImpl(ResourceService resourceService,
+                                           RoleValidationService roleValidationService) {
         this.resourceService = resourceService;
+        this.roleValidationService = roleValidationService;
     }
 
     @Override
@@ -42,6 +46,8 @@ public class FileResourceCreationServiceImpl implements FileResourceCreationServ
         if (resource.getSourceName() == null || !resource.getSourceName().toLowerCase().endsWith(".txt")) {
             throw new ParamException("REQUIRED", "Only .txt files are accepted", "file");
         }
+
+        roleValidationService.validateAllowedRoles(resource.getAllowedRoles());
     }
 }
 

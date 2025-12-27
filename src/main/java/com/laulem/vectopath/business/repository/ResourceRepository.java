@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * ARCHITECTURAL COMPROMISE:
+ * Search methods include business logic (access control)
+ * embedded directly in SQL queries for performance reasons.
+ */
 public interface ResourceRepository {
 
     Resource save(Resource resource);

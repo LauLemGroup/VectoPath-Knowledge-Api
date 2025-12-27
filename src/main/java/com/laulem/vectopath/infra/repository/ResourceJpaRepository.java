@@ -1,6 +1,5 @@
 package com.laulem.vectopath.infra.repository;
 
-import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.infra.entity.ResourceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,9 +9,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ResourceJpaRepository extends JpaRepository<ResourceEntity, UUID> {
-
-    List<ResourceEntity> findByStatus(ResourceStatus status);
-    List<ResourceEntity> findByNameContainingIgnoreCase(String name);
 
     @Query(value = """
             SELECT DISTINCT ON (r.id) r.* 
