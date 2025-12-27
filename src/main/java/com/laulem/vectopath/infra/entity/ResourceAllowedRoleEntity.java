@@ -15,7 +15,6 @@ import java.util.UUID;
 @Table(name = "resource_allowed_roles")
 @IdClass(ResourceAllowedRoleEntity.ResourceAllowedRoleId.class)
 public class ResourceAllowedRoleEntity {
-
     @Id
     @Column(name = "resource_id")
     private UUID resourceId;

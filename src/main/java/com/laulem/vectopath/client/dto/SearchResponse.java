@@ -25,7 +25,6 @@ public class SearchResponse {
     @JsonProperty("content_type")
     private String contentType;
 
-
     @JsonProperty("metadata")
     private String metadata;
 
@@ -85,7 +84,6 @@ public class SearchResponse {
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
-
 
     public String getMetadata() {
         return metadata;

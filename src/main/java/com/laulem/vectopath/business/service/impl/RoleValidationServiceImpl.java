@@ -1,7 +1,9 @@
-package com.laulem.vectopath.business.service;
+package com.laulem.vectopath.business.service.impl;
 
 import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.model.SecurityConfig;
+import com.laulem.vectopath.business.service.AuthenticationService;
+import com.laulem.vectopath.business.service.RoleValidationService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 

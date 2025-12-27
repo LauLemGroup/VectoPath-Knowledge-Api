@@ -21,7 +21,6 @@ import java.util.UUID;
 
 @Repository
 public class VectorStoreRepository implements VectorRepository {
-
     private static final Logger logger = LoggerFactory.getLogger(VectorStoreRepository.class);
 
     private final VectorStore vectorStore;

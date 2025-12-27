@@ -8,7 +8,6 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "security.cors")
 public class CorsProperties {
-
     private List<String> allowedOrigins;
     private List<String> allowedMethods;
     private List<String> allowedHeaders;

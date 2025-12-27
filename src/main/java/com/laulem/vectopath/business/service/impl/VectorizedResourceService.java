@@ -42,9 +42,5 @@ public class VectorizedResourceService {
             throw new ResourceDeletionException(resourceId, e);
         }
     }
-
-    public boolean isResourceAlreadyLoaded(UUID resourceId) {
-        return vectorRepository.isResourceAlreadyLoaded(resourceId);
-    }
 }
 

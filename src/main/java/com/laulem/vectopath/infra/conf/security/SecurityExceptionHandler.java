@@ -21,7 +21,6 @@ import java.util.Map;
 
 @Component
 public class SecurityExceptionHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
-
     private static final Logger logger = LoggerFactory.getLogger(SecurityExceptionHandler.class);
     private final ObjectMapper objectMapper;
 

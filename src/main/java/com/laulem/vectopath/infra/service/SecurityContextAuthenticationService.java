@@ -33,12 +33,5 @@ public class SecurityContextAuthenticationService implements AuthenticationServi
                         .toList())
                 .orElse(Collections.emptyList());
     }
-
-    @Override
-    public boolean isAuthenticated() {
-        return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
-                .map(Authentication::isAuthenticated)
-                .orElse(false);
-    }
 }
 

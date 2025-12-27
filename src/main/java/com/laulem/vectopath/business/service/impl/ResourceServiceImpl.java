@@ -89,13 +89,6 @@ public class ResourceServiceImpl implements ResourceService {
             resource.setStatus(ResourceStatus.PROCESSING);
             resource = resourceRepository.save(resource);
 
-            if (vectorizedResourceService.isResourceAlreadyLoaded(resource.getId())) {
-                logger.info("Resource [{}] already loaded in vector store", resource.getName());
-                resource.setStatus(ResourceStatus.VECTORIZED);
-                resource = resourceRepository.save(resource);
-                return resource;
-            }
-
             vectorRepository.addResource(resource);
 
             resource.setStatus(ResourceStatus.VECTORIZED);

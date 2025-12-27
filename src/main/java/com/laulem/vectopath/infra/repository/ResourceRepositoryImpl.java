@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 @Repository
 public class ResourceRepositoryImpl implements ResourceRepository {
-
     private final ResourceJpaRepository jpaRepository;
     private final RoleJpaRepository roleJpaRepository;
     private final AuthenticationService authenticationService;

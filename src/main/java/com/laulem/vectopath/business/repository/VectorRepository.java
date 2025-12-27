@@ -13,6 +13,4 @@ public interface VectorRepository {
     List<PartialResource> searchSimilar(String query, int limit, String currentUser, List<String> userAuthorities);
 
     void deleteResource(UUID resourceId);
-
-    boolean isResourceAlreadyLoaded(UUID resourceId);
 }

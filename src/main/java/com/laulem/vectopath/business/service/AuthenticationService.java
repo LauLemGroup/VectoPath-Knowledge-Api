@@ -6,5 +6,4 @@ import java.util.Optional;
 public interface AuthenticationService {
     Optional<String> getUser();
     List<String> getAuthorities();
-    boolean isAuthenticated();
 }
