@@ -1,7 +1,7 @@
 package com.laulem.vectopath.business.service.impl;
 
+import com.laulem.vectopath.business.exception.ResourceDeletionException;
 import com.laulem.vectopath.business.model.PartialResource;
-import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
 import com.laulem.vectopath.business.service.AuthenticationService;
 import org.slf4j.Logger;
@@ -25,11 +25,6 @@ public class VectorizedResourceService {
         this.authenticationService = authenticationService;
     }
 
-    public void addResource(Resource resource) {
-        logger.info("Adding resource [{}]", resource.getName());
-        vectorRepository.addResource(resource);
-    }
-
     public List<PartialResource> searchSimilar(String query, int limit) {
         logger.info("Semantic search for: {}", query);
 
@@ -41,7 +36,11 @@ public class VectorizedResourceService {
 
     public void deleteResource(UUID resourceId) {
         logger.info("Deleting resource: {}", resourceId);
-        vectorRepository.deleteResource(resourceId);
+        try {
+            vectorRepository.deleteResource(resourceId);
+        } catch (Exception e) {
+            throw new ResourceDeletionException(resourceId, e);
+        }
     }
 
     public boolean isResourceAlreadyLoaded(UUID resourceId) {

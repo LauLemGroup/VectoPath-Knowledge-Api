@@ -3,8 +3,6 @@ package com.laulem.vectopath.infra.repository;
 import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
-import com.laulem.vectopath.infra.repository.exception.VectorStoreAdditionException;
-import com.laulem.vectopath.infra.repository.exception.VectorStoreDeletionException;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,27 +37,21 @@ public class VectorStoreRepository implements VectorRepository {
 
     public void addResource(Resource resource) {
         logger.info("Adding resource [{}] to vector store", resource.getName());
+        Document rawDoc = new Document(resource.getContent());
+        List<Document> splitDocs = tokenTextSplitter.apply(List.of(rawDoc));
 
-        try {
-            Document rawDoc = new Document(resource.getContent());
-            List<Document> splitDocs = tokenTextSplitter.apply(List.of(rawDoc));
+        List<Document> taggedDocs = splitDocs.stream()
+                .map(doc -> new Document(doc.getText(), Map.of(
+                        "resource_id", resource.getId().toString(),
+                        "resource_name", resource.getName(),
+                        "content_type", resource.getContentType(),
+                        "status", resource.getStatus().name(),
+                        "chunk_type", "content"
+                )))
+                .toList();
 
-            List<Document> taggedDocs = splitDocs.stream()
-                    .map(doc -> new Document(doc.getText(), Map.of(
-                            "resource_id", resource.getId().toString(),
-                            "resource_name", resource.getName(),
-                            "content_type", resource.getContentType(),
-                            "status", resource.getStatus().name(),
-                            "chunk_type", "content"
-                    )))
-                    .toList();
-
-            vectorStore.add(taggedDocs);
-            logger.info("[{}] Loaded {} documents", resource.getName(), taggedDocs.size());
-
-        } catch (Exception e) {
-            throw new VectorStoreAdditionException(resource.getName(), e);
-        }
+        vectorStore.add(taggedDocs);
+        logger.info("[{}] Loaded {} documents", resource.getName(), taggedDocs.size());
     }
 
     public List<PartialResource> searchSimilar(String query, int limit, String currentUser, List<String> userAuthorities) {
@@ -132,18 +124,15 @@ public class VectorStoreRepository implements VectorRepository {
     }
 
     public void deleteResource(UUID resourceId) {
-        try {
-            String deleteSql = "DELETE FROM vector_store WHERE metadata->>'resource_id' = ?";
-            int deletedCount = jdbcTemplate.update(deleteSql, resourceId.toString());
+        String deleteSql = "DELETE FROM vector_store WHERE metadata->>'resource_id' = ?";
+        int deletedCount = jdbcTemplate.update(deleteSql, resourceId.toString());
 
-            if (deletedCount > 0) {
-                logger.info("Deleted {} documents for resource {}", deletedCount, resourceId);
-            } else {
-                logger.warn("No documents found to delete for resource {}", resourceId);
-            }
-        } catch (Exception e) {
-            throw new VectorStoreDeletionException(resourceId, e);
+        if (deletedCount > 0) {
+            logger.info("Deleted {} documents for resource {}", deletedCount, resourceId);
+        } else {
+            logger.warn("No documents found to delete for resource {}", resourceId);
         }
+
     }
 
     public boolean isResourceAlreadyLoaded(UUID resourceId) {

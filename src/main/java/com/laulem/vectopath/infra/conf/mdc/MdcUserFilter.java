@@ -1,6 +1,6 @@
 package com.laulem.vectopath.infra.conf.mdc;
 
-import com.laulem.vectopath.client.tool.UserTools;
+import com.laulem.vectopath.shared.tool.UserTools;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

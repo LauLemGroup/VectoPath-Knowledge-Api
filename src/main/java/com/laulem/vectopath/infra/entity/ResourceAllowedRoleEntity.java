@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.repository;
+package com.laulem.vectopath.infra.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

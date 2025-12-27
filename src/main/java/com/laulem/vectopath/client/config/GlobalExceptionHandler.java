@@ -4,11 +4,10 @@ import com.laulem.vectopath.business.exception.DownloadInterruptedException;
 import com.laulem.vectopath.business.exception.HttpDownloadException;
 import com.laulem.vectopath.business.exception.NotFoundException;
 import com.laulem.vectopath.business.exception.ParamException;
+import com.laulem.vectopath.business.exception.ResourceDeletionException;
 import com.laulem.vectopath.business.exception.VectorizationException;
 import com.laulem.vectopath.client.dto.GeneralResponseException;
 import com.laulem.vectopath.client.exception.UnsupportedSourceTypeException;
-import com.laulem.vectopath.infra.repository.exception.VectorStoreAdditionException;
-import com.laulem.vectopath.infra.repository.exception.VectorStoreDeletionException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,21 +101,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
-    @ExceptionHandler(VectorStoreAdditionException.class)
-    public ResponseEntity<GeneralResponseException> handleVectorStoreAdditionException(VectorStoreAdditionException ex, HttpServletRequest request) {
-        logger.error("VectorStoreAdditionException: path={}, message={}", request.getRequestURI(), ex.getMessage(), ex);
-        GeneralResponseException response = new GeneralResponseException(
-            "VECTOR_STORE_ADDITION_ERROR",
-            ex.getMessage(),
-            buildPath(request),
-            null,
-            null
-        );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-
-    @ExceptionHandler(VectorStoreDeletionException.class)
-    public ResponseEntity<GeneralResponseException> handleVectorStoreDeletionException(VectorStoreDeletionException ex, HttpServletRequest request) {
+    @ExceptionHandler(ResourceDeletionException.class)
+    public ResponseEntity<GeneralResponseException> handleVectorStoreDeletionException(ResourceDeletionException ex, HttpServletRequest request) {
         logger.error("VectorStoreDeletionException: path={}, message={}", request.getRequestURI(), ex.getMessage(), ex);
         GeneralResponseException response = new GeneralResponseException(
             "VECTOR_STORE_DELETION_ERROR",

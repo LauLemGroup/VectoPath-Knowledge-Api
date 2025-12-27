@@ -1,4 +1,4 @@
-package com.laulem.vectopath.client.tool;
+package com.laulem.vectopath.shared.tool;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.util.Strings;
