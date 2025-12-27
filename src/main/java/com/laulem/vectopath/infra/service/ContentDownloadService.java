@@ -3,6 +3,7 @@ package com.laulem.vectopath.infra.service;
 import com.laulem.vectopath.business.exception.DownloadInterruptedException;
 import com.laulem.vectopath.business.exception.HttpDownloadException;
 import com.laulem.vectopath.business.service.ContentDownloaderService;
+import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,7 +47,7 @@ public class ContentDownloadService implements ContentDownloaderService {
 
             if (response.statusCode() == HttpStatus.OK.value()) {
                 logger.info("Content successfully downloaded from: {}", url);
-                return response.body();
+                return Jsoup.parse(response.body()).text();
             } else {
                 throw new HttpDownloadException(response.statusCode(), url);
             }
