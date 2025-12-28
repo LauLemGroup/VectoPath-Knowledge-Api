@@ -1,6 +1,5 @@
 package com.laulem.vectopath.client.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.testconfig.TestDataLoader;
 import com.laulem.vectopath.testconfig.TestcontainersConfiguration;
@@ -31,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// TODO : Add tests for createResource and createResourceFromFile
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -42,9 +42,6 @@ class ResourceControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private TestDataLoader testDataLoader;
@@ -60,10 +57,6 @@ class ResourceControllerIntegrationTest {
         when(embeddingModel.embed(anyString())).thenReturn(testDataLoader.createDefaultEmbeddingFloatVector());
     }
 
-    // Note: Tests pour createResource et createResourceFromFile sont commentés
-    // car ils nécessitent un mock plus sophistiqué de l'EmbeddingModel
-    // pour gérer la vectorisation. Ces tests devraient être ajoutés avec
-    // un mock approprié ou en utilisant un vrai modèle d'embedding de test.
 
     @Test
     void getAllResources_shouldReturnAllResources() throws Exception {
@@ -153,9 +146,6 @@ class ResourceControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
-
-    // Note: Test pour reprocessResource commenté car il nécessite un mock
-    // plus sophistiqué de l'EmbeddingModel pour gérer la re-vectorisation
 
     @Test
     void reprocessResource_shouldReturn404_whenResourceNotExists() throws Exception {
