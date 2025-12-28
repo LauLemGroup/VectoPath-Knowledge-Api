@@ -1,234 +1,408 @@
-# VectoPath - Gestionnaire de Ressources avec Vectorisation
+# VectoPath - Resource Manager with Vectorization
 
-VectoPath est une API de gestion intelligente de ressources avec capacités de vectorisation et de recherche sémantique utilisant PostgreSQL avec l'extension pgvector.
+VectoPath is an intelligent resource management API with vectorization and semantic search capabilities using PostgreSQL with the pgvector extension. The application integrates Spring Security with OAuth2 to secure resource access and provides fine-grained role management to control permissions.
 
 ## Architecture
 
-L'application suit une architecture hexagonale avec les couches suivantes :
+Hexagonal architecture (Ports & Adapters) with clear separation of concerns:
 
-- **Business** : Modèles de domaine et services métier
-- **Client** : Contrôleurs REST et DTOs
-- **Infrastructure** : Repositories PostgreSQL et configurations
+- **Business**: Business domain, models and use cases
+- **Client**: Primary adapters (REST API)
+- **Infrastructure**: Secondary adapters (Database, configurations)
 
-## Fonctionnalités
+## Features
 
-### Gestion des Ressources
-- Création et stockage de ressources textuelles
-- Vectorisation automatique du contenu
-- Suivi du statut de traitement (PENDING, PROCESSING, VECTORIZED, ERROR)
-- Recherche par nom et filtrage par statut
+### Resource Management
+- Creation and storage of textual resources
+- Support for multiple source types:
+  - **Direct text**: Creation from textual content
+  - **URL**: Download and content extraction from a URL (with jsoup)
+  - **File**: Import of text files
+- Automatic content vectorization
+- Processing status tracking (PENDING, PROCESSING, VECTORIZED, ERROR)
+- Search by name and filtering by status
+- Custom metadata management (JSON)
+- Traceability with source fields (source_type, source_url, source_content_type)
 
-### Recherche Sémantique
-- Découpage intelligent du contenu en chunks
-- Vectorisation avec OpenAI Embeddings (text-embedding-ada-002)
-- Recherche par similarité cosinus dans pgvector
-- API de recherche sémantique
+### Semantic Search
+- Intelligent content chunking
+- Vectorization with OpenAI Embeddings (text-embedding-3-small, 1536 dimensions)
+- Cosine similarity search in pgvector with HNSW index
+- Semantic search API with configurable limit
+- Chunk retrieval by resource
 
-## Démarrage
+### Security
+- OAuth2 authentication with JWT
+- Role and permission management at resource level
+- Customizable CORS configuration
+- MDC for user traceability in logs
 
-### Prérequis
+## Technologies Used
+
+- **Framework**: Spring Boot 3.5.6
+- **Language**: Java 21
+- **Database**: PostgreSQL with pgvector extension
+- **AI/ML**: Spring AI 1.0.0, OpenAI Embeddings
+- **Security**: Spring Security, OAuth2 Resource Server
+- **Testing**: JUnit 5, Testcontainers, ArchUnit
+- **Scraping**: jsoup 1.21.2
+
+## Project Structure
+
+```
+src/main/java/com/laulem/vectopath/
+├── business/           # Business layer (domain)
+│   ├── model/         # Domain models
+│   ├── repository/    # Ports (interfaces)
+│   ├── service/       # Business services (use cases) / Ports (interfaces)
+│   └── exception/     # Business exceptions
+├── client/            # Client layer (primary adapters)
+│   ├── controller/    # REST controllers
+│   ├── dto/          # DTOs for REST API
+│   └── service/      # Orchestrators
+├── infra/            # Infrastructure layer (secondary adapters)
+│   ├── conf/         # Configurations (Security, CORS, MDC)
+│   ├── entity/       # JPA entities
+│   ├── repository/   # Repository implementations
+│   ├── service/      # Technical services
+│   └── properties/   # Externalized properties
+└── shared/           # Shared code
+```
+
+## Quick Start
+
+### Prerequisites
 - Java 21
-- PostgreSQL avec extension pgvector
-- Clé API OpenAI
+- Maven 3.x
+- PostgreSQL with pgvector extension
+- OpenAI API Key
+- OAuth2 Server (production only)
 
-### Configuration
-1. Démarrez PostgreSQL avec Docker Compose :
+### Getting Started
+
+#### 1. PostgreSQL Database with pgvector
+
+Start PostgreSQL with Docker Compose (includes pgvector extension):
 ```bash
 cd infra/container
 docker-compose up -d
 ```
 
-2. Configurez votre clé OpenAI (optionnel) :
+The database will be accessible at:
+- Host: `localhost:5432`
+- Database: `vecto_path`
+- User: `user`
+- Password: `password`
+
+To verify the container is running:
 ```bash
-export OPENAI_API_KEY=your_api_key_here
+docker ps | grep vecto-path-pgvector-db
 ```
 
-3. Démarrez l'application :
+To stop the database:
 ```bash
+docker-compose down
+```
+
+#### 2. Environment Variables Configuration
+
+Minimum configuration (required):
+```bash
+export OPENAI_API_KEY=sk-your-api-key-here
+```
+
+#### 3. Starting the Application
+
+```bash
+# Local mode (without OAuth2 security)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+
+# Production mode (with OAuth2 security)
 ./mvnw spring-boot:run
 ```
 
-L'API est disponible sur `http://localhost:8080`
+The API is available at `http://localhost:8080`
 
 ## API Endpoints
 
-### Ressources
+### Resources
 
-#### Créer une ressource
+#### Create a resource (direct text)
 ```http
 POST /api/v1/resources
 Content-Type: application/json
 
 {
-  "name": "Document exemple",
-  "content": "Voici le contenu de mon document...",
+  "name": "Example document",
+  "content": "Here is the content of my document...",
   "content_type": "text/plain",
-  "metadata": "{\"source\":\"upload\",\"author\":\"user\"}"
+  "source_type": "TEXT",
+  "metadata": "{\"source\":\"upload\",\"author\":\"user\"}",
+  "access_level": "PUBLIC",
+  "allowed_roles": ["ROLE_USER"]
 }
 ```
 
-#### Lister toutes les ressources
+#### Create a resource from a URL
+```http
+POST /api/v1/resources
+Content-Type: application/json
+
+{
+  "name": "Wikipedia Article",
+  "source_type": "URL",
+  "source_url": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+  "access_level": "PUBLIC"
+}
+```
+
+#### Upload a file
+```http
+POST /api/v1/resources/upload
+Content-Type: multipart/form-data
+
+file: [file]
+name: "My document"
+metadata: "{"category":"documentation"}"
+access_level: "PRIVATE"
+allowed_roles: ["ROLE_ADMIN"]
+```
+
+#### List all resources
 ```http
 GET /api/v1/resources
 ```
 
-#### Récupérer une ressource
+#### Retrieve a resource
 ```http
 GET /api/v1/resources/{id}
 ```
 
-#### Rechercher des ressources par nom
+#### Search resources by name
 ```http
-GET /api/v1/resources/search?name=exemple
+GET /api/v1/resources/search?name=example
 ```
 
-#### Filtrer par statut
+#### Filter by status
 ```http
 GET /api/v1/resources/status/VECTORIZED
 ```
 
-#### Relancer le traitement
+Available statuses:
+- `PENDING`: Waiting for processing
+- `PROCESSING`: Being vectorized
+- `VECTORIZED`: Successfully vectorized
+- `ERROR`: Error during processing
+- `DELETED`: Deleted
+
+#### Reprocess
 ```http
 POST /api/v1/resources/{id}/reprocess
 ```
 
-#### Supprimer une ressource
+#### Delete a resource
 ```http
 DELETE /api/v1/resources/{id}
 ```
 
-### Recherche Sémantique
+### Semantic Search
 
-#### Recherche sémantique
+#### Semantic search
 ```http
 POST /api/v1/search/semantic
 Content-Type: application/json
 
 {
-  "query": "Comment fonctionne la vectorisation ?",
+  "query": "How does vectorization work?",
   "limit": 10
 }
 ```
 
-#### Récupérer les chunks d'une ressource
-```http
-GET /api/v1/search/chunks/resource/{resourceId}
-```
+## Configuration
 
-#### Récupérer un chunk spécifique
-```http
-GET /api/v1/search/chunks/{id}
-```
+### Environment Variables
 
-## Statuts des Ressources
+#### OpenAI (Required)
+- `OPENAI_API_KEY`: OpenAI API key for embeddings **(REQUIRED)**
+- `OPENAI_EMBEDDING_MODEL`: Embedding model (default: `text-embedding-3-small`)
+- `OPENAI_EMBEDDING_OPTIONS_MODEL`: Embedding model options (default: `text-embedding-3-small`)
 
-- `PENDING` : En attente de traitement
-- `PROCESSING` : En cours de vectorisation
-- `VECTORIZED` : Vectorisée avec succès
-- `ERROR` : Erreur lors du traitement
-- `DELETED` : Supprimée
+#### Database
+- `DATABASE_URL`: PostgreSQL database URL (default: `jdbc:postgresql://localhost:5432/vecto_path`)
+- `DATABASE_USERNAME`: PostgreSQL user (default: `user`)
+- `DATABASE_PASSWORD`: PostgreSQL password (default: `password`)
+- `DATABASE_DRIVER`: JDBC driver (default: `org.postgresql.Driver`)
 
-## Structure de Base de Données
+#### JPA/Hibernate
+- `JPA_DDL_AUTO`: DDL mode (default: `none`)
+- `JPA_SHOW_SQL`: Show SQL queries (default: `false`)
+- `HIBERNATE_FORMAT_SQL`: Format SQL queries (default: `false`)
+- `JPA_OPEN_IN_VIEW`: Open Session In View (default: `false`)
 
-### Table `resources`
-Stocke les métadonnées des ressources :
-- `id` : UUID unique
-- `name` : Nom de la ressource
-- `content` : Contenu textuel complet
-- `content_type` : Type de contenu
-- `status` : Statut de traitement
-- `metadata` : Métadonnées JSON
-- `created_at`, `updated_at` : Timestamps
+#### OAuth2 Security
+- `JWT_ISSUER_URI`: OAuth2 server URI (default: `http://localhost:9000`)
+- `SECURITY_ADMIN_ROLE`: Administrator role (default: `admin`)
+- `SECURITY_NOT_AFFECTABLE_ROLES`: Non-assignable roles (default: `admin,search.semantic`)
+- `SECURITY_SCOPE_SEARCH_SEMANTIC`: Scope for semantic search (default: `search.semantic`)
+- `SECURITY_SCOPE_RESOURCES_READ`: Scope for reading resources (default: `resources.read`)
+- `SECURITY_SCOPE_RESOURCES_WRITE`: Scope for writing resources (default: `resources.write`)
+- `SECURITY_SCOPE_RESOURCES_DELETE`: Scope for deleting resources (default: `resources.delete`)
 
-### Table `doc_chunk_1536`
-Stocke les chunks vectorisés :
-- `id` : UUID unique
-- `resource_id` : Référence vers la ressource
-- `content` : Contenu du chunk
-- `metadata` : Métadonnées JSON du chunk
-- `embedding` : Vecteur 1536 dimensions (OpenAI)
-- `created_at` : Timestamp
+#### PGVector
+- `PGVECTOR_INDEX_TYPE`: Index type (default: `HNSW`) - possible values: `HNSW`, `IVFFLAT`
+- `PGVECTOR_DISTANCE_TYPE`: Distance type (default: `COSINE_DISTANCE`)
+- `PGVECTOR_DIMENSIONS`: Vector dimensions (default: `1536`)
+- `PGVECTOR_MAX_DOCUMENT_BATCH_SIZE`: Maximum batch size (default: `10000`)
 
-## Exemples d'Usage
+#### CORS
+- `CORS_ALLOWED_ORIGINS`: Allowed origins (default: `http://localhost:3000,http://localhost:4200,http://localhost:8080,http://localhost:9000`)
+- `CORS_ALLOWED_METHODS`: Allowed HTTP methods (default: `GET,POST,PUT,PATCH,DELETE,OPTIONS`)
+- `CORS_ALLOWED_HEADERS`: Allowed headers (default: `Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers`)
+- `CORS_EXPOSED_HEADERS`: Headers exposed to the client (default: `Access-Control-Allow-Origin,Access-Control-Allow-Credentials`)
+- `CORS_ALLOW_CREDENTIALS`: Allow credentials (default: `false`)
+- `CORS_MAX_AGE`: Preflight cache duration in seconds (default: `3600`)
 
-### 1. Ajouter un document et le vectoriser
+#### Content
+- `CONTENT_DOWNLOAD_TIMEOUT`: Download timeout in seconds (default: `30`)
+- `CONTENT_DOWNLOAD_CONNECT_TIMEOUT`: Connection timeout in seconds (default: `10`)
+
+#### Application
+- `APPLICATION_TITLE`: Application title (default: `VectoPath`)
+- `APPLICATION_VERSION`: Application version (default: pom.xml version)
+- `SERVER_PORT`: Server port (default: `8080`)
+
+#### Logging
+- `LOGGING_LEVEL_VECTOPATH`: Log level for VectoPath (default: `INFO`)
+- `LOGGING_LEVEL_SPRING_AI`: Log level for Spring AI (default: `INFO`)
+- `LOGGING_PATTERN_CONSOLE`: Console log pattern (default: `%d{yyyy-MM-dd HH:mm:ss} - %msg%n`)
+- `JACKSON_TIME_ZONE`: Jackson timezone (default: `UTC`)
+
+### Configuration Examples
+
+#### Minimal Configuration (Local)
 ```bash
-curl -X POST http://localhost:8080/api/v1/resources \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Guide utilisateur",
-    "content": "Ce guide explique comment utiliser VectoPath pour gérer vos documents et effectuer des recherches sémantiques...",
-    "content_type": "text/plain",
-    "metadata": "{\"category\":\"documentation\",\"language\":\"fr\"}"
-  }'
+export OPENAI_API_KEY=sk-your-api-key-here
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-### 2. Rechercher dans les documents
+#### Production Configuration
 ```bash
-curl -X POST http://localhost:8080/api/v1/search/semantic \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "comment utiliser la recherche sémantique",
-    "limit": 5
-  }'
-```
+# OpenAI
+export OPENAI_API_KEY=sk-your-api-key-here
 
-### 3. Vérifier le statut d'une ressource
-```bash
-curl http://localhost:8080/api/v1/resources/{resource-id}
-```
+# OAuth2
+export JWT_ISSUER_URI=https://auth.myapp.com
 
-## Configuration Avancée
+# Database
+export DATABASE_URL=jdbc:postgresql://db.myapp.com:5432/vectopath_prod
+export DATABASE_USERNAME=vectopath_user
+export DATABASE_PASSWORD=secure_password
 
-### Variables d'Environnement
-- `OPENAI_API_KEY` : Clé API OpenAI pour les embeddings
-- `SPRING_DATASOURCE_URL` : URL de la base PostgreSQL
-- `SPRING_DATASOURCE_USERNAME` : Utilisateur PostgreSQL
-- `SPRING_DATASOURCE_PASSWORD` : Mot de passe PostgreSQL
-
-### Configuration CORS
-
-La configuration CORS est externalisée dans les fichiers `application.yml` et peut être personnalisée pour chaque environnement.
-
-#### Variables d'environnement CORS disponibles :
-- `CORS_ALLOWED_ORIGINS` : Origines autorisées (séparées par des virgules)
-- `CORS_ALLOWED_METHODS` : Méthodes HTTP autorisées
-- `CORS_ALLOWED_HEADERS` : En-têtes autorisés
-- `CORS_EXPOSED_HEADERS` : En-têtes exposés au client
-- `CORS_ALLOW_CREDENTIALS` : Autoriser les credentials (true/false)
-- `CORS_MAX_AGE` : Durée de cache de la pré-vérification (en secondes)
-
-#### Exemple de configuration pour production :
-```bash
-export CORS_ALLOWED_ORIGINS=https://monapp.com,https://www.monapp.com
+# CORS
+export CORS_ALLOWED_ORIGINS=https://myapp.com,https://www.myapp.com
 export CORS_ALLOW_CREDENTIALS=true
+
+./mvnw spring-boot:run
 ```
 
-#### Configuration dans application.yml :
+#### application.yml File (Example)
 ```yaml
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      embedding:
+        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+        options:
+          model: ${OPENAI_EMBEDDING_OPTIONS_MODEL:text-embedding-3-small}
+    vectorstore:
+      pgvector:
+        index-type: ${PGVECTOR_INDEX_TYPE:HNSW}
+        distance-type: ${PGVECTOR_DISTANCE_TYPE:COSINE_DISTANCE}
+        dimensions: ${PGVECTOR_DIMENSIONS:1536}
+        max-document-batch-size: ${PGVECTOR_MAX_DOCUMENT_BATCH_SIZE:10000}
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/vecto_path}
+    username: ${DATABASE_USERNAME:user}
+    password: ${DATABASE_PASSWORD:password}
+    driver-class-name: ${DATABASE_DRIVER:org.postgresql.Driver}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
+
 security:
+  admin-role: ${SECURITY_ADMIN_ROLE:admin}
+  scopes:
+    search:
+      semantic: ${SECURITY_SCOPE_SEARCH_SEMANTIC:search.semantic}
+    resources:
+      read: ${SECURITY_SCOPE_RESOURCES_READ:resources.read}
+      write: ${SECURITY_SCOPE_RESOURCES_WRITE:resources.write}
+      delete: ${SECURITY_SCOPE_RESOURCES_DELETE:resources.delete}
   cors:
-    allowed-origins: http://localhost:3000,http://localhost:4200
-    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
-    allowed-headers: Authorization,Content-Type,X-Requested-With,Accept,Origin
-    exposed-headers: Access-Control-Allow-Origin,Access-Control-Allow-Credentials
-    allow-credentials: false
-    max-age: 3600
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Requested-With,Accept,Origin}
+    exposed-headers: ${CORS_EXPOSED_HEADERS:Access-Control-Allow-Origin,Access-Control-Allow-Credentials}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
+    max-age: ${CORS_MAX_AGE:3600}
+
+content:
+  download:
+    timeout-seconds: ${CONTENT_DOWNLOAD_TIMEOUT:30}
+    connect-timeout-seconds: ${CONTENT_DOWNLOAD_CONNECT_TIMEOUT:10}
+
+server:
+  port: ${SERVER_PORT:8080}
 ```
 
-### Personnalisation
-- Taille des chunks : Modifiez `DEFAULT_CHUNK_SIZE` dans `ResourceServiceImpl`
-- Modèle d'embedding : Changez `spring.ai.openai.embedding.model`
-- Limite de recherche : Ajustez dans les requêtes API
+### Customization
 
-## Développement
+- **Chunk size**: Modify `DEFAULT_CHUNK_SIZE` in `ResourceServiceImpl`
+- **Embedding model**: Change `OPENAI_EMBEDDING_MODEL` or `spring.ai.openai.embedding.model` (default: text-embedding-3-small)
+- **Search limit**: Adjust the `limit` parameter in API requests
+- **pgvector index type**: HNSW (recommended) or IVFFLAT via `PGVECTOR_INDEX_TYPE` or `spring.ai.vectorstore.pgvector.index-type`
+- **Vector dimensions**: 1536 dimensions for OpenAI via `PGVECTOR_DIMENSIONS` or `spring.ai.vectorstore.pgvector.dimensions`
 
-### Tests
+## Security
+
+### Authentication and Authorization
+
+VectoPath uses Spring Security with OAuth2 Resource Server (JWT) to secure resource access.
+
+#### Role Management
+
+The role system allows controlling access to resources:
+- `app_roles` table: Stores available roles
+- `resource_allowed_roles` table: Associates resources with authorized roles
+- Authenticated users must have the appropriate role to access a resource
+
+#### Protected Endpoints
+- `/actuator/health`, `/actuator/info`: Public access
+- `/api/v1/**`: Authentication required
+- Other endpoints are protected by default
+
+### Security Profiles
+- **Production**: OAuth2 security enabled (default profile)
+- **Local/Test**: Security disabled (`local` and `test` profiles)
+
+## Development
+
+### Testing
 ```bash
 ./mvnw test
 ```
 
-### Construction
+Tests include:
+- Integration tests with Testcontainers
+- Architectural tests with ArchUnit (hexagonal architecture validation)
+- REST controller tests
+
+### Build
 ```bash
 ./mvnw clean package
 ```
@@ -238,6 +412,15 @@ security:
 docker build -t vectopath .
 docker run -p 8080:8080 vectopath
 ```
-# TODO
-- Ajouter une gestion de sécurité (authentification, autorisation)
-- Implémenter des fonctionnalités de logging et monitoring avancées
+
+## TODO
+- [ ] Paginated data retrieval
+- [ ] Allow database authentication (in addition to OAuth2)
+- [ ] Test distribution as a library to be extended
+- [ ] Provide Swagger/OpenAPI and remove business layer dependency in DTOs
+- [ ] Rename app_roles (more explicit name)
+- [ ] Create CRUD operations for app_roles
+- [ ] Extend supported file types for vectorization
+- [ ] Provide a sample Bruno collection
+- [ ] Add other embeddings (e.g., HuggingFace)
+- [ ] Add more integration & unit tests
