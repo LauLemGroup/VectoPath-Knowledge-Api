@@ -1,7 +1,9 @@
 package com.laulem.vectopath.infra.repository;
 
+import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.infra.entity.ResourceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -32,4 +34,8 @@ public interface ResourceJpaRepository extends JpaRepository<ResourceEntity, UUI
         @Param("username") String username,
         @Param("userRoles") String[] userRoles
     );
+
+    @Modifying
+    @Query("UPDATE ResourceEntity r SET r.status = :status WHERE r.id = :id")
+    void updateStatus(@Param("id") UUID id, @Param("status") ResourceStatus status);
 }

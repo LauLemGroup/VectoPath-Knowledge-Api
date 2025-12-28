@@ -25,4 +25,6 @@ public interface ResourceRepository {
     List<Resource> findByNameContainingIgnoreCase(String name);
 
     void deleteById(UUID id);
+
+    void updateStatus(Resource resource);
 }

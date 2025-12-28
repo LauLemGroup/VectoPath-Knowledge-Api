@@ -38,7 +38,6 @@ public class ResourceServiceImpl implements ResourceService {
         if (resource.getAccessLevel() == null) {
             resource.setAccessLevel(Resource.AccessLevel.PRIVATE);
         }
-        resource = resourceRepository.save(resource);
         resource = processResourceVectorization(resource);
         return resource;
     }
@@ -92,13 +91,13 @@ public class ResourceServiceImpl implements ResourceService {
             vectorRepository.addResource(resource);
 
             resource.setStatus(ResourceStatus.VECTORIZED);
-            resource = resourceRepository.save(resource);
+            resourceRepository.updateStatus(resource);
 
             logger.info("Vectorization completed successfully for resource: {}", resource.getName());
             return resource;
         } catch (Exception e) {
             resource.setStatus(ResourceStatus.ERROR);
-            resourceRepository.save(resource);
+            resourceRepository.updateStatus(resource);
 
             throw new VectorizationException(resource.getName(), e);
         }

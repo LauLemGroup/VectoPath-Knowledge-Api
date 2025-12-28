@@ -120,4 +120,10 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     public void deleteById(UUID id) {
         jpaRepository.deleteById(id);
     }
+
+    @Override
+    @Transactional
+    public void updateStatus(Resource resource) {
+        jpaRepository.updateStatus(resource.getId(), resource.getStatus());
+    }
 }
