@@ -58,10 +58,10 @@ public class ResourceController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResourceResponse createResourceFromFile(
             @RequestPart("file") MultipartFile file,
-            @RequestParam("name") String name,
-            @RequestParam(value = "metadata", required = false) String metadata,
-            @RequestParam(value = "access_level", required = false) Resource.AccessLevel accessLevel,
-            @RequestParam(value = "allowed_roles", required = false) List<String> allowedRoles) throws IOException {
+            @RequestPart("name") String name,
+            @RequestPart(value = "metadata", required = false) String metadata,
+            @RequestPart(value = "access_level", required = false) Resource.AccessLevel accessLevel,
+            @RequestPart(value = "allowed_roles", required = false) List<String> allowedRoles) throws IOException {
         logger.info("Creating resource from file: {} with name: {}", file.getOriginalFilename(), name);
         CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, null, metadata, accessLevel, allowedRoles);
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, file));
