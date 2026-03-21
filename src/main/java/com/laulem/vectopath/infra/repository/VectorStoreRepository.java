@@ -3,6 +3,7 @@ package com.laulem.vectopath.infra.repository;
 import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
+import org.assertj.core.util.Strings;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 
 import java.sql.PreparedStatement;
 import java.util.List;
@@ -53,7 +55,7 @@ public class VectorStoreRepository implements VectorRepository {
         logger.info("[{}] Loaded {} documents", resource.getName(), taggedDocs.size());
     }
 
-    public List<PartialResource> searchSimilar(String query, int limit, double minSimilarity, String currentUser, List<String> userAuthorities) {
+    public List<PartialResource> searchSimilar(String query, int limit, double minSimilarity, String currentUser, List<String> userAuthorities, List<UUID> resourceIds) {
         try {
             float[] vector = embeddingModel.embed(query);
 
@@ -66,15 +68,18 @@ public class VectorStoreRepository implements VectorRepository {
             }
             pgVector.setValue(vectorStr.append("]").toString());
 
+            String resourceIdFilter = CollectionUtils.isEmpty(resourceIds) ? "" : " AND r.id = ANY(?)";
+
             String sql = """
                     WITH authorized_resources AS (
                         SELECT DISTINCT ON (r.id) r.id, r.name, r.content_type, r.metadata, r.created_at, r.updated_at
                         FROM resources r
                         LEFT JOIN resource_allowed_roles rar ON r.id = rar.resource_id AND r.access_level = 'ROLE_LIST'
                         LEFT JOIN app_roles ar ON rar.role_id = ar.id
-                        WHERE r.access_level = 'PUBLIC'
+                        WHERE (r.access_level = 'PUBLIC'
                            OR (r.access_level = 'PRIVATE' AND r.created_by = ?)
-                           OR (r.access_level = 'ROLE_LIST' AND ar.role_name = ANY(?))
+                           OR (r.access_level = 'ROLE_LIST' AND ar.role_name = ANY(?)))
+                           """ + resourceIdFilter + """
                         ORDER BY r.id
                     ),
                     search_results AS (
@@ -107,12 +112,16 @@ public class VectorStoreRepository implements VectorRepository {
 
             return jdbcTemplate.query(
                     conn -> {
+                        int paramIndex = 1;
                         PreparedStatement ps = conn.prepareStatement(sql);
-                        ps.setObject(1, currentUser);
-                        ps.setArray(2, conn.createArrayOf("text", userAuthorities != null ? userAuthorities.toArray() : new String[0]));
-                        ps.setObject(3, pgVector);
-                        ps.setDouble(4, minSimilarity);
-                        ps.setInt(5, limit);
+                        ps.setObject(paramIndex++, currentUser);
+                        ps.setArray(paramIndex++, conn.createArrayOf("text", userAuthorities != null ? userAuthorities.toArray() : new String[0]));
+                        if (!Strings.isNullOrEmpty(resourceIdFilter)) {
+                            ps.setArray(paramIndex++, conn.createArrayOf("uuid", resourceIds.toArray()));
+                        }
+                        ps.setObject(paramIndex++, pgVector);
+                        ps.setDouble(paramIndex++, minSimilarity);
+                        ps.setInt(paramIndex++, limit);
                         return ps;
                     },
                     (rs, rowNum) -> {

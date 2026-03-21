@@ -32,7 +32,7 @@ public class SearchController {
     public List<SearchResponse> searchSemantic(@RequestBody SearchRequest request) {
         logger.info("Semantic search: {}", request.getQuery());
 
-         return vectorizedResourceService.searchSimilar(request.getQuery(), request.getLimit(), request.getMinSimilarity())
+        return vectorizedResourceService.searchSimilar(request.getQuery(), request.getLimit(), request.getMinSimilarity(), request.getResourceIds())
                 .stream()
                 .map(SearchResponse::new)
                 .toList();

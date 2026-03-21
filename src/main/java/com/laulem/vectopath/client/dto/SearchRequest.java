@@ -2,6 +2,9 @@ package com.laulem.vectopath.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+import java.util.UUID;
+
 public class SearchRequest {
 
     @JsonProperty("query")
@@ -12,6 +15,9 @@ public class SearchRequest {
 
     @JsonProperty(value = "min_similarity", defaultValue = "0.50")
     private double minSimilarity = 0.5;
+
+    @JsonProperty("resource_ids")
+    private List<UUID> resourceIds;
 
     public SearchRequest() {
     }
@@ -49,5 +55,13 @@ public class SearchRequest {
 
     public void setMinSimilarity(double minSimilarity) {
         this.minSimilarity = minSimilarity;
+    }
+
+    public List<UUID> getResourceIds() {
+        return resourceIds;
+    }
+
+    public void setResourceIds(List<UUID> resourceIds) {
+        this.resourceIds = resourceIds;
     }
 }
