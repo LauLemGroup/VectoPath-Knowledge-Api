@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -48,7 +48,7 @@ public class ResourceController {
     @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResourceResponse createResource(@RequestBody @Valid CreateResourceRequest request) throws IOException {
+    public ResourceResponse createResource(@RequestBody @Validated CreateResourceRequest request) throws IOException {
         logger.info("Creating new resource of type {} : {}", request.sourceType(), request.name());
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, null));
     }
@@ -58,12 +58,12 @@ public class ResourceController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResourceResponse createResourceFromFile(
             @RequestPart("file") MultipartFile file,
-            @RequestPart("name") String name,
-            @RequestPart(value = "metadata", required = false) String metadata,
-            @RequestPart(value = "access_level", required = false) Resource.AccessLevel accessLevel,
-            @RequestPart(value = "allowed_roles", required = false) List<String> allowedRoles) throws IOException {
+            @RequestParam("name") String name,
+            @RequestParam(value = "metadata", required = false) String metadata,
+            @RequestParam(value = "access_level", required = false) Resource.AccessLevel accessLevel,
+            @RequestParam(value = "allowed_roles", required = false) List<String> allowedRoles) throws IOException {
         logger.info("Creating resource from file: {} with name: {}", file.getOriginalFilename(), name);
-        CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, null, metadata, accessLevel, allowedRoles);
+        CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, metadata, accessLevel, allowedRoles);
         return new ResourceResponse(resourceCreationOrchestrator.createResource(request, file));
     }
 

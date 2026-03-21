@@ -38,7 +38,7 @@ public class UserTools {
     private static boolean isNonLocalIp(final String ip) {
         try {
             return Strings.isNotBlank(ip) && !UserTools.LOCALHOST_IP.equals(ip) && !InetAddress.getByName(ip).isSiteLocalAddress();
-        } catch (final Exception e) {
+        } catch (final Exception _) {
             return false;
         }
     }

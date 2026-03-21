@@ -34,6 +34,9 @@ public class SearchResponse {
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 
+    @JsonProperty("similarity_score")
+    private Double similarityScore;
+
     public SearchResponse(PartialResource partialResource) {
         this.vectorId = partialResource.getVectorId();
         this.resourceId = partialResource.getResourceId();
@@ -43,6 +46,7 @@ public class SearchResponse {
         this.metadata = partialResource.getMetadata();
         this.createdAt = partialResource.getCreatedAt();
         this.updatedAt = partialResource.getUpdatedAt();
+        this.similarityScore = partialResource.getSimilarityScore();
     }
 
     public UUID getVectorId() {
@@ -107,5 +111,13 @@ public class SearchResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Double getSimilarityScore() {
+        return similarityScore;
+    }
+
+    public void setSimilarityScore(Double similarityScore) {
+        this.similarityScore = similarityScore;
     }
 }

@@ -18,9 +18,6 @@ public record CreateResourceRequest(
         @JsonProperty("source_type")
         SourceType sourceType,
 
-        @JsonProperty("content_type")
-        String contentType,
-
         @JsonProperty("metadata")
         String metadata,
 

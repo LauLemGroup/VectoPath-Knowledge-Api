@@ -7,15 +7,24 @@ public class SearchRequest {
     @JsonProperty("query")
     private String query;
 
-    @JsonProperty("limit")
+    @JsonProperty(value = "limit", defaultValue = "10")
     private int limit = 10;
+
+    @JsonProperty(value = "min_similarity", defaultValue = "0.50")
+    private double minSimilarity = 0.5;
 
     public SearchRequest() {
     }
 
-    public SearchRequest(String query, int limit) {
+    public SearchRequest(String query, Integer limit, Double minSimilarity) {
         this.query = query;
-        this.limit = limit;
+        if (limit != null) {
+            this.limit = limit;
+        }
+
+        if (minSimilarity != null) {
+            this.minSimilarity = minSimilarity;
+        }
     }
 
     public String getQuery() {
@@ -32,5 +41,13 @@ public class SearchRequest {
 
     public void setLimit(int limit) {
         this.limit = limit;
+    }
+
+    public double getMinSimilarity() {
+        return minSimilarity;
+    }
+
+    public void setMinSimilarity(double minSimilarity) {
+        this.minSimilarity = minSimilarity;
     }
 }

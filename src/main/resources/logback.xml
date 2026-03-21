@@ -7,7 +7,7 @@
               class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <Pattern>
-                [%black(%d{ISO8601})] [%X{transaction.id}] [%highlight(%level)] [%blue(%t)] [%yellow(%C)] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{transaction.duration}] [%msg%throwable]%n
+                [%X{traceId}:%X{spanId}][%black(%d{ISO8601})] [%X{transaction.id}] [%highlight(%level)] [%blue(%t)] [%yellow(%C)] [%X{transaction.ip}] [%X{transaction.user}] [%X{transaction.path}] [%X{transaction.query}] [%X{transaction.status}] [%X{transaction.duration}] [%msg%throwable]%n
             </Pattern>
         </encoder>
     </appender>

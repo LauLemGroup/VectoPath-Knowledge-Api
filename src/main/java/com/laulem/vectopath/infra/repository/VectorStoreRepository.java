@@ -26,7 +26,7 @@ public class VectorStoreRepository implements VectorRepository {
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
     private final EmbeddingModel embeddingModel;
-    private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
+    private final TokenTextSplitter tokenTextSplitter = TokenTextSplitter.builder().build();
 
     public VectorStoreRepository(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
         this.vectorStore = vectorStore;
@@ -53,7 +53,7 @@ public class VectorStoreRepository implements VectorRepository {
         logger.info("[{}] Loaded {} documents", resource.getName(), taggedDocs.size());
     }
 
-    public List<PartialResource> searchSimilar(String query, int limit, String currentUser, List<String> userAuthorities) {
+    public List<PartialResource> searchSimilar(String query, int limit, double minSimilarity, String currentUser, List<String> userAuthorities) {
         try {
             float[] vector = embeddingModel.embed(query);
 
@@ -76,20 +76,32 @@ public class VectorStoreRepository implements VectorRepository {
                            OR (r.access_level = 'PRIVATE' AND r.created_by = ?)
                            OR (r.access_level = 'ROLE_LIST' AND ar.role_name = ANY(?))
                         ORDER BY r.id
+                    ),
+                    search_results AS (
+                        SELECT
+                            v.id as vector_id,
+                            v.content,
+                            ar.id as resource_id,
+                            ar.name as resource_name,
+                            ar.content_type,
+                            ar.metadata,
+                            ar.created_at,
+                            ar.updated_at,
+                            (1 - (v.embedding <=> ?)) as similarity_score
+                        FROM vector_store v
+                        INNER JOIN authorized_resources ar ON (v.metadata->>'resource_id')::uuid = ar.id
+                        WHERE v.metadata->>'chunk_type' = 'content'
+                    ),
+                    deduped_results AS (
+                        SELECT DISTINCT ON (content)
+                            vector_id, content, resource_id, resource_name, content_type, metadata, created_at, updated_at, similarity_score
+                        FROM search_results
+                        ORDER BY content, created_at, vector_id DESC
                     )
-                    SELECT
-                        v.id as vector_id,
-                        v.content,
-                        ar.id as resource_id,
-                        ar.name as resource_name,
-                        ar.content_type,
-                        ar.metadata,
-                        ar.created_at,
-                        ar.updated_at
-                    FROM vector_store v
-                    INNER JOIN authorized_resources ar ON (v.metadata->>'resource_id')::uuid = ar.id
-                    WHERE v.metadata->>'chunk_type' = 'content'
-                    ORDER BY v.embedding <=> ?
+                    SELECT vector_id, content, resource_id, resource_name, content_type, metadata, created_at, updated_at, similarity_score
+                    FROM deduped_results
+                    WHERE similarity_score >= ?
+                    ORDER BY similarity_score DESC
                     LIMIT ?
                     """;
 
@@ -99,7 +111,8 @@ public class VectorStoreRepository implements VectorRepository {
                         ps.setObject(1, currentUser);
                         ps.setArray(2, conn.createArrayOf("text", userAuthorities != null ? userAuthorities.toArray() : new String[0]));
                         ps.setObject(3, pgVector);
-                        ps.setInt(4, limit);
+                        ps.setDouble(4, minSimilarity);
+                        ps.setInt(5, limit);
                         return ps;
                     },
                     (rs, rowNum) -> {
@@ -112,6 +125,7 @@ public class VectorStoreRepository implements VectorRepository {
                         partialResource.setMetadata(rs.getString("metadata"));
                         partialResource.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
                         partialResource.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+                        partialResource.setSimilarityScore(rs.getDouble("similarity_score"));
                         return partialResource;
                     }
             );

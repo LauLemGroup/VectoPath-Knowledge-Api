@@ -11,11 +11,10 @@ import java.io.IOException;
 @Component
 public class TestDataLoader {
     public static final int EMBEDDING_DIMENSIONS = 1536;
-    private final ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapper();
     private final JdbcTemplate jdbcTemplate;
 
-    public TestDataLoader(ObjectMapper objectMapper, JdbcTemplate jdbcTemplate) {
-        this.objectMapper = objectMapper;
+    public TestDataLoader(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

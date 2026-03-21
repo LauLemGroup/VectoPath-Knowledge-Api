@@ -25,13 +25,13 @@ public class VectorizedResourceService {
         this.authenticationService = authenticationService;
     }
 
-    public List<PartialResource> searchSimilar(String query, int limit) {
+    public List<PartialResource> searchSimilar(String query, int limit, double minSimilarity) {
         logger.info("Semantic search for: {}", query);
 
         String currentUser = authenticationService.getUser().orElse(null);
         List<String> userAuthorities = authenticationService.getAuthorities();
 
-        return vectorRepository.searchSimilar(query, limit, currentUser, userAuthorities);
+        return vectorRepository.searchSimilar(query, limit, minSimilarity, currentUser, userAuthorities);
     }
 
     public void deleteResource(UUID resourceId) {

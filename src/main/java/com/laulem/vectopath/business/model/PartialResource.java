@@ -17,6 +17,7 @@ public class PartialResource {
     private String sourceName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Double similarityScore;
 
     // Getters & Setters
     public UUID getVectorId() {
@@ -98,5 +99,13 @@ public class PartialResource {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Double getSimilarityScore() {
+        return similarityScore;
+    }
+
+    public void setSimilarityScore(Double similarityScore) {
+        this.similarityScore = similarityScore;
     }
 }

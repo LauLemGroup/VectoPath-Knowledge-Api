@@ -10,7 +10,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9000}
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8090/realms/master}
+
 
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/vecto_path}
@@ -50,8 +51,8 @@ spring:
         max-document-batch-size: ${PGVECTOR_MAX_DOCUMENT_BATCH_SIZE:10000}
 
 security:
-  admin-role: ${SECURITY_ADMIN_ROLE:admin}
-  not-affectable-roles: ${SECURITY_NOT_AFFECTABLE_ROLES:admin,search.semantic}
+  admin-role: ${SECURITY_ADMIN_ROLE:resource.admin}
+  not-affectable-roles: ${SECURITY_NOT_AFFECTABLE_ROLES:resource.admin,search.semantic}
   scopes:
     search:
       semantic: ${SECURITY_SCOPE_SEARCH_SEMANTIC:search.semantic}
@@ -73,7 +74,7 @@ content:
     connect-timeout-seconds: ${CONTENT_DOWNLOAD_CONNECT_TIMEOUT:10}
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8081}
 
 spring.jackson:
   time-zone: ${JACKSON_TIME_ZONE:UTC}
@@ -84,3 +85,21 @@ logging:
     org.springframework.ai: ${LOGGING_LEVEL_SPRING_AI:INFO}
   pattern:
     console: "${LOGGING_PATTERN_CONSOLE:%d{yyyy-MM-dd HH:mm:ss} - %msg%n}"
+management:
+  info:
+    ssl:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  health:
+    db:
+      enabled: true
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+
+

@@ -8,8 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -42,8 +43,7 @@ class SearchControllerIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private TestDataLoader testDataLoader;
@@ -62,7 +62,7 @@ class SearchControllerIntegrationTest {
     @Test
     void searchSemantic_shouldReturnResults_fromDatabase() throws Exception {
         // Given
-        SearchRequest request = new SearchRequest("java programming", 5);
+        SearchRequest request = new SearchRequest("java programming", 5, null);
 
         // When & Then
         mockMvc.perform(post(SEARCH_SEMANTIC_PATH)
@@ -78,13 +78,15 @@ class SearchControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].content_type", is("text/plain")))
                 .andExpect(jsonPath("$[0].metadata", notNullValue()))
                 .andExpect(jsonPath("$[0].created_at", notNullValue()))
-                .andExpect(jsonPath("$[0].updated_at", notNullValue()));
+                .andExpect(jsonPath("$[0].updated_at", notNullValue()))
+                .andExpect(jsonPath("$[0].similarity_score", notNullValue()))
+                .andExpect(jsonPath("$[0].similarity_score", greaterThanOrEqualTo(0.0)));
     }
 
     @Test
     void searchSemantic_shouldRespectLimit() throws Exception {
         // Given
-        SearchRequest request = new SearchRequest("test query", 2);
+        SearchRequest request = new SearchRequest("test query", 2, null);
 
         // When & Then
         mockMvc.perform(post(SEARCH_SEMANTIC_PATH)
@@ -99,7 +101,7 @@ class SearchControllerIntegrationTest {
         // Given
         testDataLoader.cleanDatabase();
 
-        SearchRequest request = new SearchRequest("nonexistent query", 10);
+        SearchRequest request = new SearchRequest("nonexistent query", 10, null);
 
         // When & Then
         mockMvc.perform(post(SEARCH_SEMANTIC_PATH)
