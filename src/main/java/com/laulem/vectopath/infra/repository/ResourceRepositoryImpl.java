@@ -50,7 +50,7 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Override
     @Transactional(readOnly = true)
     public Optional<Resource> findById(UUID id) {
-        String username = authenticationService.getUser().orElse(null);
+        String username = authenticationService.getCurrentUser();
         List<String> userRoles = authenticationService.getAuthorities();
 
         List<ResourceEntity> results = jpaRepository.findWithAccessControl(
@@ -67,7 +67,7 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Override
     @Transactional(readOnly = true)
     public List<Resource> findAll() {
-        String username = authenticationService.getUser().orElse(null);
+        String username = authenticationService.getCurrentUser();
         List<String> userRoles = authenticationService.getAuthorities();
 
         return jpaRepository.findWithAccessControl(
@@ -84,7 +84,7 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Override
     @Transactional(readOnly = true)
     public List<Resource> findByStatus(ResourceStatus status) {
-        String username = authenticationService.getUser().orElse(null);
+        String username = authenticationService.getCurrentUser();
         List<String> userRoles = authenticationService.getAuthorities();
 
         return jpaRepository.findWithAccessControl(
@@ -101,7 +101,7 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Override
     @Transactional(readOnly = true)
     public List<Resource> findByNameContainingIgnoreCase(String name) {
-        String username = authenticationService.getUser().orElse(null);
+        String username = authenticationService.getCurrentUser();
         List<String> userRoles = authenticationService.getAuthorities();
 
         return jpaRepository.findWithAccessControl(

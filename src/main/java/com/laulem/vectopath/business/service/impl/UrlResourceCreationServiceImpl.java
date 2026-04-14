@@ -38,6 +38,7 @@ public class UrlResourceCreationServiceImpl implements UrlResourceCreationServic
 
         String content = contentDownloaderService.downloadContent(resource.getSourceName().trim());
         resource.setContent(content);
+        resource.setSize((long) content.getBytes().length);
         resource.setContentType(MediaType.TEXT_PLAIN_VALUE);
 
         return resourceService.createResource(resource);

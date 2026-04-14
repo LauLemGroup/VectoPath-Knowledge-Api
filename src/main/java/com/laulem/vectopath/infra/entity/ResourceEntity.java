@@ -54,6 +54,9 @@ public class ResourceEntity {
     @Column(name = "source_name")
     private String sourceName;
 
+    @Column(name = "size")
+    private Long size;
+
     @Column(name = "created_by")
     private String createdBy;
 
@@ -95,6 +98,7 @@ public class ResourceEntity {
         entity.metadata = resource.getMetadata();
         entity.sourceType = resource.getSourceType();
         entity.sourceName = resource.getSourceName();
+        entity.size = resource.getSize();
         entity.createdBy = resource.getCreatedBy();
         entity.accessLevel = resource.getAccessLevel();
         entity.createdAt = resource.getCreatedAt();
@@ -112,6 +116,7 @@ public class ResourceEntity {
         resource.setMetadata(this.metadata);
         resource.setSourceType(this.sourceType);
         resource.setSourceName(this.sourceName);
+        resource.setSize(this.size);
         resource.setCreatedBy(this.createdBy);
         resource.setAccessLevel(this.accessLevel);
         resource.setAllowedRoles(
@@ -187,6 +192,14 @@ public class ResourceEntity {
 
     public void setSourceName(String sourceName) {
         this.sourceName = sourceName;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 
     public String getCreatedBy() {

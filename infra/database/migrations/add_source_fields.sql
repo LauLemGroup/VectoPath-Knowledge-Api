@@ -20,3 +20,8 @@ ADD COLUMN IF NOT EXISTS access_level varchar(20) NOT NULL DEFAULT 'PRIVATE' CHE
 -- Add the column allowed_roles
 ALTER TABLE resources
 ADD COLUMN IF NOT EXISTS allowed_roles json;
+
+-- Add the column size (in bytes)
+ALTER TABLE resources
+    ADD COLUMN IF NOT EXISTS size bigint;
+

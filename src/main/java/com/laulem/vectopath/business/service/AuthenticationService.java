@@ -4,6 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AuthenticationService {
-    Optional<String> getUser();
+    String DEFAULT_UNKNOWN_USERNAME = "anonymous";
+
+    String getCurrentUser();
+
+    Optional<String> findCurrentUser();
+
     List<String> getAuthorities();
 }

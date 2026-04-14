@@ -33,7 +33,7 @@ public class ResourceCreationOrchestrator {
 
     public Resource createResource(CreateResourceRequest request, MultipartFile file) throws IOException {
         CreateResourceRequest.SourceType sourceType = getSourceTypeOrDefault(request);
-        String createdBy = authenticationService.getUser().orElse("anonymous");
+        String createdBy = authenticationService.getCurrentUser();
         Resource.AccessLevel accessLevel = request.accessLevel() != null ? request.accessLevel() : Resource.AccessLevel.PRIVATE;
 
         Resource resource = new Resource();
@@ -47,6 +47,7 @@ public class ResourceCreationOrchestrator {
             case TEXT:
                 resource.setContent(request.content());
                 resource.setSourceType(Resource.SourceType.TEXT);
+                resource.setSize((long) request.content().getBytes().length);
                 return textResourceCreationService.createFromText(resource);
             case URL:
                 resource.setSourceType(Resource.SourceType.URL);
@@ -57,6 +58,7 @@ public class ResourceCreationOrchestrator {
                 resource.setSourceType(Resource.SourceType.FILE);
                 resource.setSourceName(file.getOriginalFilename());
                 resource.setContent(new String(file.getBytes(), StandardCharsets.UTF_8));
+                resource.setSize(file.getSize());
                 return fileResourceCreationService.createFromFileContent(resource);
             default:
                 throw new UnsupportedSourceTypeException(sourceType);

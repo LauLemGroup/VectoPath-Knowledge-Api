@@ -1,6 +1,6 @@
-# VectoPath - Resource Manager with Vectorization
+# VectoPath Knowledge Api - Resource Manager with Vectorization
 
-VectoPath is an intelligent resource management API with vectorization and semantic search capabilities using PostgreSQL with the pgvector extension. The application integrates Spring Security with OAuth2 to secure resource access and provides fine-grained role management to control permissions.
+VectoPath Knowledge Api is an intelligent resource management API with vectorization and semantic search capabilities using PostgreSQL with the pgvector extension. The application integrates Spring Security with OAuth2 to secure resource access and provides fine-grained role management to control permissions.
 
 ## Architecture
 

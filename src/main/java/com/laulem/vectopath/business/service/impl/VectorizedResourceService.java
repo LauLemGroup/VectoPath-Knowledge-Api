@@ -28,7 +28,7 @@ public class VectorizedResourceService {
     public List<PartialResource> searchSimilar(String query, int limit, double minSimilarity, List<UUID> resourceIds) {
         logger.info("Semantic search for: {}", query);
 
-        String currentUser = authenticationService.getUser().orElse(null);
+        String currentUser = authenticationService.getCurrentUser();
         List<String> userAuthorities = authenticationService.getAuthorities();
 
         return vectorRepository.searchSimilar(query, limit, minSimilarity, currentUser, userAuthorities, resourceIds);

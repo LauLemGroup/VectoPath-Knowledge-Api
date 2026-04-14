@@ -13,6 +13,7 @@ public class Resource {
     private String metadata;
     private SourceType sourceType;
     private String sourceName;
+    private Long size;
     private String createdBy;
     private AccessLevel accessLevel;
     private List<String> allowedRoles;
@@ -100,6 +101,14 @@ public class Resource {
 
     public String getSourceName() {
         return sourceName;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(final Long size) {
+        this.size = size;
     }
 
     public void setSourceName(String sourceName) {

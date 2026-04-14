@@ -9,7 +9,7 @@
     </parent>
 
     <groupId>com.laulem</groupId>
-    <artifactId>vectopath</artifactId>
+    <artifactId>vectopath-knowledge-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>VectoPath</name>
     <description>

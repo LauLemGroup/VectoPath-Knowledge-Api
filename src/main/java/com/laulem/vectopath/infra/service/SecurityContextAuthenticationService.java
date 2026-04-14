@@ -15,7 +15,12 @@ import java.util.Optional;
 public class SecurityContextAuthenticationService implements AuthenticationService {
 
     @Override
-    public Optional<String> getUser() {
+    public String getCurrentUser() {
+        return findCurrentUser().orElse(DEFAULT_UNKNOWN_USERNAME);
+    }
+
+    @Override
+    public Optional<String> findCurrentUser() {
         return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .filter(Authentication::isAuthenticated)
                 .map(Authentication::getPrincipal)

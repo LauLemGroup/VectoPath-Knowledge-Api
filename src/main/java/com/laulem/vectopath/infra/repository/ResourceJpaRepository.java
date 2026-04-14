@@ -23,7 +23,7 @@ public interface ResourceJpaRepository extends JpaRepository<ResourceEntity, UUI
             AND (
                 r.access_level = 'PUBLIC'
                 OR (r.access_level = 'PRIVATE' AND r.created_by = :username)
-                OR (r.access_level = 'ROLE_LIST' AND ar.role_name = ANY(CAST(:userRoles AS text[])))
+                OR (r.access_level = 'ROLE_LIST' AND (ar.role_name = ANY(CAST(:userRoles AS text[])) OR r.created_by = :username))
             )
             ORDER BY r.id, r.created_at DESC
             """, nativeQuery = true)

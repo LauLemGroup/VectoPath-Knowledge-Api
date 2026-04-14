@@ -31,6 +31,9 @@ public class ResourceResponse {
     @JsonProperty("source_name")
     private String sourceName;
 
+    @JsonProperty("size")
+    private Long size;
+
     @JsonProperty("created_by")
     private String createdBy;
 
@@ -54,6 +57,7 @@ public class ResourceResponse {
         this.metadata = resource.getMetadata();
         this.sourceType = resource.getSourceType();
         this.sourceName = resource.getSourceName();
+        this.size = resource.getSize();
         this.createdBy = resource.getCreatedBy();
         this.accessLevel = resource.getAccessLevel();
         this.allowedRoles = resource.getAllowedRoles();
