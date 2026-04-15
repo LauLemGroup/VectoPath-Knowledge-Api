@@ -5,20 +5,16 @@ application:
 spring:
   application:
     name: VectoPath Knowledge API
-
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${JWT_ISSUER_URI:http://localhost:8090/realms/master}
-
-
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/vecto_path}
     username: ${DATABASE_USERNAME:user}
     password: ${DATABASE_PASSWORD:password}
     driver-class-name: ${DATABASE_DRIVER:org.postgresql.Driver}
-
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:none}
@@ -27,22 +23,7 @@ spring:
       hibernate:
         format_sql: ${HIBERNATE_FORMAT_SQL:false}
     open-in-view: ${JPA_OPEN_IN_VIEW:false}
-
   ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:demo}
-      embedding:
-        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
-        options:
-          model: ${OPENAI_EMBEDDING_OPTIONS_MODEL:text-embedding-3-small}
-    mcp:
-      server:
-        name: vecto-path-server
-        version: 1.0.0
-        type: SYNC
-        stdio:
-          enabled: false
-        sse-message-endpoint: /mcp/message
     vectorstore:
       pgvector:
         index-type: ${PGVECTOR_INDEX_TYPE:HNSW}
@@ -73,6 +54,14 @@ content:
     timeout-seconds: ${CONTENT_DOWNLOAD_TIMEOUT:30}
     connect-timeout-seconds: ${CONTENT_DOWNLOAD_CONNECT_TIMEOUT:10}
 
+embedding:
+  # provider : OPENAI (default) | OLLAMA
+  provider: ${EMBEDDING_PROVIDER:OPENAI}
+  api-key: ${EMBEDDING_API_KEY:demo}
+  base-url: ${EMBEDDING_BASE_URL:http://localhost:11434}
+  model: ${EMBEDDING_MODEL:text-embedding-3-small}
+  dimensions: ${EMBEDDING_DIMENSIONS:256}
+
 server:
   port: ${SERVER_PORT:8081}
 
@@ -85,6 +74,7 @@ logging:
     org.springframework.ai: ${LOGGING_LEVEL_SPRING_AI:INFO}
   pattern:
     console: "${LOGGING_PATTERN_CONSOLE:%d{yyyy-MM-dd HH:mm:ss} - %msg%n}"
+
 management:
   info:
     ssl:
@@ -100,6 +90,3 @@ management:
     metrics:
       export:
         enabled: false
-
-
-

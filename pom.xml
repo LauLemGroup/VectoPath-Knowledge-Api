@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.4</version>
+        <version>4.0.5</version>
     </parent>
 
     <groupId>com.laulem</groupId>
@@ -20,7 +20,7 @@
     </description>
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>2.0.0-M3</spring-ai.version>
+        <spring-ai.version>2.0.0-M4</spring-ai.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <jsoup.version>1.21.2</jsoup.version>
         <archunit.version>1.4.1</archunit.version>
@@ -32,7 +32,11 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-openai</artifactId>
+            <artifactId>spring-ai-openai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-ollama</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>

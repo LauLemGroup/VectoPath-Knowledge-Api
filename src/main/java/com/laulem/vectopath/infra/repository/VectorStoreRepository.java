@@ -3,7 +3,6 @@ package com.laulem.vectopath.infra.repository;
 import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorRepository;
-import org.assertj.core.util.Strings;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.sql.PreparedStatement;
 import java.util.List;
@@ -116,7 +116,7 @@ public class VectorStoreRepository implements VectorRepository {
                         PreparedStatement ps = conn.prepareStatement(sql);
                         ps.setObject(paramIndex++, currentUser);
                         ps.setArray(paramIndex++, conn.createArrayOf("text", userAuthorities != null ? userAuthorities.toArray() : new String[0]));
-                        if (!Strings.isNullOrEmpty(resourceIdFilter)) {
+                        if (StringUtils.hasText(resourceIdFilter)) {
                             ps.setArray(paramIndex++, conn.createArrayOf("uuid", resourceIds.toArray()));
                         }
                         ps.setObject(paramIndex++, pgVector);
