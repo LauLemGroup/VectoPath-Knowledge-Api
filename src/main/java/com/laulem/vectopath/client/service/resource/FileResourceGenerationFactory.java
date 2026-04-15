@@ -13,16 +13,16 @@ import java.util.stream.Collectors;
 @Component
 public class FileResourceGenerationFactory {
 
-    private final Map<String, FileResourceGeneration> generationMap;
+    private final Map<String, FileResourceGeneration> resourceGenerationFactory;
 
     public FileResourceGenerationFactory(List<FileResourceGeneration> generations) {
-        this.generationMap = generations.stream()
+        this.resourceGenerationFactory = generations.stream()
                 .collect(Collectors.toMap(FileResourceGeneration::getFileExtension, Function.identity()));
     }
 
     public FileResourceGeneration getResourceGeneration(MultipartFile file) {
         String extension = extractExtension(file);
-        FileResourceGeneration generation = generationMap.get(extension);
+        FileResourceGeneration generation = resourceGenerationFactory.get(extension);
         if (generation == null) {
             throw new UnsupportedFileExtensionException(extension);
         }

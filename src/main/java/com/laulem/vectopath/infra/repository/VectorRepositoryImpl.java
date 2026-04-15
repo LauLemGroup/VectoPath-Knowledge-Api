@@ -3,12 +3,12 @@ package com.laulem.vectopath.infra.repository;
 import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.repository.VectorStoreRepository;
+import com.laulem.vectopath.business.service.splitter.DocumentSplitterFactory;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -28,21 +28,22 @@ public class VectorRepositoryImpl implements VectorStoreRepository {
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
     private final EmbeddingModel embeddingModel;
-    private final TokenTextSplitter tokenTextSplitter = TokenTextSplitter.builder().build();
+    private final DocumentSplitterFactory documentSplitterFactory;
 
-    public VectorRepositoryImpl(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
+    public VectorRepositoryImpl(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel, DocumentSplitterFactory documentSplitterFactory) {
         this.vectorStore = vectorStore;
         this.jdbcTemplate = jdbcTemplate;
         this.embeddingModel = embeddingModel;
+        this.documentSplitterFactory = documentSplitterFactory;
     }
 
     public void addResource(Resource resource) {
         logger.info("Adding resource [{}] to vector store", resource.getName());
-        Document rawDoc = new Document(resource.getContent());
-        List<Document> splitDocs = tokenTextSplitter.apply(List.of(rawDoc));
 
-        List<Document> taggedDocs = splitDocs.stream()
-                .map(doc -> new Document(doc.getText(), Map.of(
+        List<String> chunks = documentSplitterFactory.getSplitter(resource).split(resource.getContent());
+
+        List<Document> taggedDocs = chunks.stream()
+                .map(chunk -> new Document(chunk, Map.of(
                         "resource_id", resource.getId().toString(),
                         "resource_name", resource.getName(),
                         "content_type", resource.getContentType(),
@@ -124,7 +125,7 @@ public class VectorRepositoryImpl implements VectorStoreRepository {
                         ps.setInt(paramIndex++, limit);
                         return ps;
                     },
-                    (rs, rowNum) -> {
+                    (rs, _) -> {
                         PartialResource partialResource = new PartialResource();
                         partialResource.setVectorId(UUID.fromString(rs.getString("vector_id")));
                         partialResource.setContent(rs.getString("content"));
@@ -155,16 +156,5 @@ public class VectorRepositoryImpl implements VectorStoreRepository {
             logger.warn("No documents found to delete for resource {}", resourceId);
         }
 
-    }
-
-    public boolean isResourceAlreadyLoaded(UUID resourceId) {
-        try {
-            String sql = "SELECT COUNT(*) FROM vector_store WHERE metadata->>'resource_id' = ? AND metadata->>'chunk_type' = 'marker'";
-            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, resourceId.toString());
-            return count != null && count > 0;
-        } catch (Exception e) {
-            logger.error("Error during verification: {}", e.getMessage());
-            return false;
-        }
     }
 }

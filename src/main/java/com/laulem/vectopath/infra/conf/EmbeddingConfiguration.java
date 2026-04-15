@@ -1,4 +1,4 @@
-package com.laulem.vectopath.infra.conf.embedding;
+package com.laulem.vectopath.infra.conf;
 
 import com.laulem.vectopath.infra.properties.EmbeddingProperties;
 import org.springframework.ai.document.MetadataMode;
