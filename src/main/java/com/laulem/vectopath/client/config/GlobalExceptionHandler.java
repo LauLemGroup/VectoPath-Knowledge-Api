@@ -7,6 +7,7 @@ import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.exception.ResourceDeletionException;
 import com.laulem.vectopath.business.exception.VectorizationException;
 import com.laulem.vectopath.client.dto.GeneralResponseException;
+import com.laulem.vectopath.client.exception.UnsupportedFileExtensionException;
 import com.laulem.vectopath.client.exception.UnsupportedSourceTypeException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -54,6 +55,19 @@ public class GlobalExceptionHandler {
         logger.warn("UnsupportedSourceTypeException: path={}, message={}", request.getRequestURI(), ex.getMessage());
         GeneralResponseException response = new GeneralResponseException(
             "UNSUPPORTED_SOURCE_TYPE",
+            ex.getMessage(),
+            buildPath(request),
+            null,
+            null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(UnsupportedFileExtensionException.class)
+    public ResponseEntity<GeneralResponseException> handleUnsupportedFileExtensionException(UnsupportedFileExtensionException ex, HttpServletRequest request) {
+        logger.warn("UnsupportedFileExtensionException: path={}, message={}", request.getRequestURI(), ex.getMessage());
+        GeneralResponseException response = new GeneralResponseException(
+            "UNSUPPORTED_FILE_EXTENSION",
             ex.getMessage(),
             buildPath(request),
             null,

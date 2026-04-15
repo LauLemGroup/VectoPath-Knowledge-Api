@@ -7,6 +7,7 @@ import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.repository.ResourceRepository;
 import com.laulem.vectopath.business.repository.VectorStoreRepository;
 import com.laulem.vectopath.business.service.ResourceService;
+import com.laulem.vectopath.business.service.RoleValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -24,13 +25,15 @@ public class ResourceServiceImpl implements ResourceService {
     private final ResourceRepository resourceRepository;
     private final VectorizedResourceService vectorizedResourceService;
     private final VectorStoreRepository vectorRepository;
+    private final RoleValidationService roleValidationService;
 
     public ResourceServiceImpl(ResourceRepository resourceRepository,
                                VectorizedResourceService vectorizedResourceService,
-                               VectorStoreRepository vectorRepository) {
+                               VectorStoreRepository vectorRepository, final RoleValidationService roleValidationService) {
         this.resourceRepository = resourceRepository;
         this.vectorizedResourceService = vectorizedResourceService;
         this.vectorRepository = vectorRepository;
+        this.roleValidationService = roleValidationService;
     }
 
     @Override
@@ -38,6 +41,8 @@ public class ResourceServiceImpl implements ResourceService {
         if (resource.getAccessLevel() == null) {
             resource.setAccessLevel(Resource.AccessLevel.PRIVATE);
         }
+        roleValidationService.validateAllowedRoles(resource.getAllowedRoles());
+
         resource = processResourceVectorization(resource);
         return resource;
     }

@@ -47,9 +47,8 @@ public class ResourceEntity {
     @Column(columnDefinition = "json")
     private String metadata;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "source_type")
-    private Resource.SourceType sourceType;
+    private String sourceType;
 
     @Column(name = "source_name")
     private String sourceName;
@@ -178,11 +177,11 @@ public class ResourceEntity {
         this.metadata = metadata;
     }
 
-    public Resource.SourceType getSourceType() {
+    public String getSourceType() {
         return sourceType;
     }
 
-    public void setSourceType(Resource.SourceType sourceType) {
+    public void setSourceType(String sourceType) {
         this.sourceType = sourceType;
     }
 

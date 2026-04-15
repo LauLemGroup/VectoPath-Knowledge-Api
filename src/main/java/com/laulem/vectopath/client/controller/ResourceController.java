@@ -6,7 +6,7 @@ import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import com.laulem.vectopath.client.dto.ResourceResponse;
-import com.laulem.vectopath.client.service.ResourceCreationOrchestrator;
+import com.laulem.vectopath.client.service.ResourceCreationService;
 import com.laulem.vectopath.infra.conf.security.SecurityExpressions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,12 +37,12 @@ public class ResourceController {
     private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
 
     private final ResourceService resourceService;
-    private final ResourceCreationOrchestrator resourceCreationOrchestrator;
+    private final ResourceCreationService resourceCreationService;
 
     public ResourceController(ResourceService resourceService,
-                              ResourceCreationOrchestrator resourceCreationOrchestrator) {
+                              ResourceCreationService resourceCreationService) {
         this.resourceService = resourceService;
-        this.resourceCreationOrchestrator = resourceCreationOrchestrator;
+        this.resourceCreationService = resourceCreationService;
     }
 
     @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
@@ -50,7 +50,7 @@ public class ResourceController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResourceResponse createResource(@RequestBody @Validated CreateResourceRequest request) throws IOException {
         logger.info("Creating new resource of type {} : {}", request.sourceType(), request.name());
-        return new ResourceResponse(resourceCreationOrchestrator.createResource(request, null));
+        return new ResourceResponse(resourceCreationService.createGeneralResource(request));
     }
 
     @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
@@ -63,8 +63,8 @@ public class ResourceController {
             @RequestParam(value = "access_level", required = false) Resource.AccessLevel accessLevel,
             @RequestParam(value = "allowed_roles", required = false) List<String> allowedRoles) throws IOException {
         logger.info("Creating resource from file: {} with name: {}", file.getOriginalFilename(), name);
-        CreateResourceRequest request = new CreateResourceRequest(name, null, null, CreateResourceRequest.SourceType.FILE, metadata, accessLevel, allowedRoles);
-        return new ResourceResponse(resourceCreationOrchestrator.createResource(request, file));
+        CreateResourceRequest request = new CreateResourceRequest(name, null, null, "file", metadata, accessLevel, allowedRoles);
+        return new ResourceResponse(resourceCreationService.createFileResource(request, file));
     }
 
     @PreAuthorize(SecurityExpressions.RESOURCES_READ)

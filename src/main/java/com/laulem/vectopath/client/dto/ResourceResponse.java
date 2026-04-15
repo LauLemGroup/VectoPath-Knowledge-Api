@@ -26,7 +26,7 @@ public class ResourceResponse {
     private String metadata;
 
     @JsonProperty("source_type")
-    private Resource.SourceType sourceType;
+    private String sourceType;
 
     @JsonProperty("source_name")
     private String sourceName;

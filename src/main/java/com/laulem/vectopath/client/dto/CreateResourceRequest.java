@@ -16,7 +16,7 @@ public record CreateResourceRequest(
         String url,
 
         @JsonProperty("source_type")
-        SourceType sourceType,
+        String sourceType,
 
         @JsonProperty("metadata")
         String metadata,
@@ -27,9 +27,4 @@ public record CreateResourceRequest(
         @JsonProperty("allowed_roles")
         List<String> allowedRoles
 ) {
-    public enum SourceType {
-        TEXT,
-        URL,
-        FILE
-    }
 }

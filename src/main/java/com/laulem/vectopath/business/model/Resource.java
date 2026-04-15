@@ -11,7 +11,7 @@ public class Resource {
     private String contentType;
     private ResourceStatus status;
     private String metadata;
-    private SourceType sourceType;
+    private String sourceType;
     private String sourceName;
     private Long size;
     private String createdBy;
@@ -20,9 +20,6 @@ public class Resource {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public enum SourceType {
-        TEXT, URL, FILE
-    }
 
     public enum AccessLevel {
         PUBLIC, PRIVATE, ROLE_LIST
@@ -91,11 +88,11 @@ public class Resource {
         this.metadata = metadata;
     }
 
-    public SourceType getSourceType() {
+    public String getSourceType() {
         return sourceType;
     }
 
-    public void setSourceType(SourceType sourceType) {
+    public void setSourceType(String sourceType) {
         this.sourceType = sourceType;
     }
 

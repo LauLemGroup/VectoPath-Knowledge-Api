@@ -60,7 +60,7 @@ embedding:
   api-key: ${EMBEDDING_API_KEY:demo}
   base-url: ${EMBEDDING_BASE_URL:http://localhost:11434}
   model: ${EMBEDDING_MODEL:text-embedding-3-small}
-  dimensions: ${EMBEDDING_DIMENSIONS:256}
+  dimensions: ${EMBEDDING_DIMENSIONS:1536}
 
 server:
   port: ${SERVER_PORT:8081}

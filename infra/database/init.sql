@@ -41,7 +41,7 @@ CREATE TABLE resources (
                            content_type varchar(100),
                            status varchar(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PROCESSING', 'VECTORIZED', 'ERROR')),
                            metadata json,
-                           source_type varchar(20) CHECK (source_type IN ('TEXT', 'URL', 'FILE')),
+                           source_type varchar(20),
                            source_name varchar(500),
                            size bigint,
                            created_by varchar(255),

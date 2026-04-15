@@ -13,7 +13,7 @@ public class PartialResource {
     private String resourceName;
     private String contentType;
     private String metadata;
-    private Resource.SourceType sourceType;
+    private String sourceType;
     private String sourceName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -69,11 +69,11 @@ public class PartialResource {
         this.metadata = metadata;
     }
 
-    public Resource.SourceType getSourceType() {
+    public String getSourceType() {
         return sourceType;
     }
 
-    public void setSourceType(Resource.SourceType sourceType) {
+    public void setSourceType(String sourceType) {
         this.sourceType = sourceType;
     }
 
