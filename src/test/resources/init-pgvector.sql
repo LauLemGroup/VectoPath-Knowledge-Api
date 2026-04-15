@@ -43,6 +43,7 @@ CREATE TABLE resources (
                            metadata json,
                            source_type varchar(20) CHECK (source_type IN ('TEXT', 'URL', 'FILE')),
                            source_name varchar(500),
+                           size bigint,
                            created_by varchar(255),
                            access_level varchar(20) NOT NULL DEFAULT 'PRIVATE' CHECK (access_level IN ('PUBLIC', 'PRIVATE', 'ROLE_LIST')),
                            created_at TIMESTAMPTZ DEFAULT now(),

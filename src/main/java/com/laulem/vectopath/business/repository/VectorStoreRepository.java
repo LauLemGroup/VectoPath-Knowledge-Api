@@ -6,7 +6,7 @@ import com.laulem.vectopath.business.model.Resource;
 import java.util.List;
 import java.util.UUID;
 
-public interface VectorRepository {
+public interface VectorStoreRepository {
 
     void addResource(Resource resource);
 

@@ -2,7 +2,7 @@ package com.laulem.vectopath.infra.repository;
 
 import com.laulem.vectopath.business.model.PartialResource;
 import com.laulem.vectopath.business.model.Resource;
-import com.laulem.vectopath.business.repository.VectorRepository;
+import com.laulem.vectopath.business.repository.VectorStoreRepository;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +22,15 @@ import java.util.UUID;
 
 
 @Repository
-public class VectorStoreRepository implements VectorRepository {
-    private static final Logger logger = LoggerFactory.getLogger(VectorStoreRepository.class);
+public class VectorRepositoryImpl implements VectorStoreRepository {
+    private static final Logger logger = LoggerFactory.getLogger(VectorRepositoryImpl.class);
 
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
     private final EmbeddingModel embeddingModel;
     private final TokenTextSplitter tokenTextSplitter = TokenTextSplitter.builder().build();
 
-    public VectorStoreRepository(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
+    public VectorRepositoryImpl(VectorStore vectorStore, JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
         this.vectorStore = vectorStore;
         this.jdbcTemplate = jdbcTemplate;
         this.embeddingModel = embeddingModel;

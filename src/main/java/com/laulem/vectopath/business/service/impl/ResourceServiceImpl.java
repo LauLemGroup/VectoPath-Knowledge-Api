@@ -5,7 +5,7 @@ import com.laulem.vectopath.business.exception.VectorizationException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.repository.ResourceRepository;
-import com.laulem.vectopath.business.repository.VectorRepository;
+import com.laulem.vectopath.business.repository.VectorStoreRepository;
 import com.laulem.vectopath.business.service.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +23,11 @@ public class ResourceServiceImpl implements ResourceService {
 
     private final ResourceRepository resourceRepository;
     private final VectorizedResourceService vectorizedResourceService;
-    private final VectorRepository vectorRepository;
+    private final VectorStoreRepository vectorRepository;
 
     public ResourceServiceImpl(ResourceRepository resourceRepository,
                                VectorizedResourceService vectorizedResourceService,
-                               VectorRepository vectorRepository) {
+                               VectorStoreRepository vectorRepository) {
         this.resourceRepository = resourceRepository;
         this.vectorizedResourceService = vectorizedResourceService;
         this.vectorRepository = vectorRepository;

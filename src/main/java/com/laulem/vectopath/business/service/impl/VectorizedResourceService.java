@@ -2,7 +2,7 @@ package com.laulem.vectopath.business.service.impl;
 
 import com.laulem.vectopath.business.exception.ResourceDeletionException;
 import com.laulem.vectopath.business.model.PartialResource;
-import com.laulem.vectopath.business.repository.VectorRepository;
+import com.laulem.vectopath.business.repository.VectorStoreRepository;
 import com.laulem.vectopath.business.service.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +16,10 @@ public class VectorizedResourceService {
 
     private static final Logger logger = LoggerFactory.getLogger(VectorizedResourceService.class);
 
-    private final VectorRepository vectorRepository;
+    private final VectorStoreRepository vectorRepository;
     private final AuthenticationService authenticationService;
 
-    public VectorizedResourceService(VectorRepository vectorRepository,
+    public VectorizedResourceService(VectorStoreRepository vectorRepository,
                                      AuthenticationService authenticationService) {
         this.vectorRepository = vectorRepository;
         this.authenticationService = authenticationService;
