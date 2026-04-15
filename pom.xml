@@ -11,7 +11,7 @@
     <groupId>com.laulem</groupId>
     <artifactId>vectopath-knowledge-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>VectoPath</name>
+    <name>VectoPath Knowledge API</name>
     <description>
         VectoPath is a modular AI-driven search platform that enables secure and intelligent information retrieval
         through data vectorization. Built with Spring Boot and pgvector, it provides
