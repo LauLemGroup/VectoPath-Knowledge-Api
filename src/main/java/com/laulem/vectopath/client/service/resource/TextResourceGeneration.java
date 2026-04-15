@@ -5,9 +5,12 @@ import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @Service
 public class TextResourceGeneration implements GeneralResourceGeneration {
     private final ResourceService resourceService;

@@ -15,7 +15,6 @@ import static com.tngtech.archunit.library.Architectures.onionArchitecture;
 
 /**
  * ArchUnit test to verify compliance with hexagonal architecture.
- *
  * Expected structure:
  * - business: Business domain (core of the hexagon) - should not depend on anything
  * - client: Primary/inbound adapters (REST API, controllers)

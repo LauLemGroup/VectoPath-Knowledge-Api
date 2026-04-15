@@ -32,7 +32,7 @@ public class EmbeddingConfiguration {
                 .model(embeddingProperties.getModel());
 
         if (embeddingProperties.getDimensions() != null) {
-            options = options.dimensions(embeddingProperties.getDimensions());
+            options.dimensions(embeddingProperties.getDimensions());
         }
 
         return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, options.build());
@@ -49,7 +49,7 @@ public class EmbeddingConfiguration {
                 .model(embeddingProperties.getModel());
 
         if (embeddingProperties.getDimensions() != null) {
-            options = options.dimensions(embeddingProperties.getDimensions());
+            options.dimensions(embeddingProperties.getDimensions());
         }
 
         return OllamaEmbeddingModel.builder()

@@ -8,14 +8,16 @@ import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
 @Service
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class UrlResourceGeneration implements GeneralResourceGeneration {
-
     private static final Logger logger = LoggerFactory.getLogger(UrlResourceGeneration.class);
 
     private final ResourceService resourceService;

@@ -4,11 +4,9 @@ import com.laulem.vectopath.business.service.splitter.DocumentSplitter;
 import com.laulem.vectopath.business.service.splitter.DocumentSplitterFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
 public class DefaultTokenTextSplitter implements DocumentSplitter {
     private final TokenTextSplitter tokenTextSplitter;
 

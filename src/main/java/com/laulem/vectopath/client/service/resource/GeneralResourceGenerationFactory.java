@@ -14,7 +14,8 @@ public class GeneralResourceGenerationFactory {
     private final Map<String, GeneralResourceGeneration> resourceGenerationFactory;
 
     public GeneralResourceGenerationFactory(List<GeneralResourceGeneration> generations) {
-        this.resourceGenerationFactory = generations.stream().collect(Collectors.toMap(GeneralResourceGeneration::getSourceType, Function.identity()));
+        this.resourceGenerationFactory = generations.stream()
+                .collect(Collectors.toMap(GeneralResourceGeneration::getSourceType, Function.identity(), (_, replacement) -> replacement));
     }
 
     public GeneralResourceGeneration getResourceGeneration(String sourceType) {

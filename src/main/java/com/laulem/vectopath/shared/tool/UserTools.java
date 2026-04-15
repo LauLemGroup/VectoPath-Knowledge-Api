@@ -3,6 +3,7 @@ package com.laulem.vectopath.shared.tool;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.net.InetAddress;
@@ -24,7 +25,6 @@ public class UserTools {
         String ipAdresse = Stream.concat(Stream.ofNullable(request.getRemoteAddr()), UserTools.IP_HEADERS.stream().map(request::getHeader))
                 .filter(Objects::nonNull)
                 .flatMap(str -> Arrays.asList(str.split(",")).reversed().stream())
-                .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(UserTools::isNonLocalIp)
                 .collect(Collectors.joining(","));
@@ -45,8 +45,8 @@ public class UserTools {
 
     public static String getUsername() {
         return Optional.ofNullable(SecurityContextHolder.getContext())
-                .map(ctx -> ctx.getAuthentication())
-                .filter(auth -> auth != null && auth.isAuthenticated())
+                .map(SecurityContext::getAuthentication)
+                .filter(Authentication::isAuthenticated)
                 .map(Authentication::getName)
                 .orElse("UNAUTHENTICATED");
     }

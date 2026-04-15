@@ -122,7 +122,7 @@ public class VectorRepositoryImpl implements VectorStoreRepository {
                         }
                         ps.setObject(paramIndex++, pgVector);
                         ps.setDouble(paramIndex++, minSimilarity);
-                        ps.setInt(paramIndex++, limit);
+                        ps.setInt(paramIndex, limit);
                         return ps;
                     },
                     (rs, _) -> {

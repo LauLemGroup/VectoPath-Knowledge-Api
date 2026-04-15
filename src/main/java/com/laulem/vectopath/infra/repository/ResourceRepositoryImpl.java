@@ -61,7 +61,7 @@ public class ResourceRepositoryImpl implements ResourceRepository {
             userRoles.toArray(new String[0])
         );
 
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0).toDomain());
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst().toDomain());
     }
 
     @Override

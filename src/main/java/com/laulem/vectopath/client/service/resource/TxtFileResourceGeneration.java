@@ -6,13 +6,11 @@ import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-@Service
 public class TxtFileResourceGeneration implements FileResourceGeneration {
     private final ResourceService resourceService;
     public TxtFileResourceGeneration(ResourceService resourceService) {
