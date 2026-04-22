@@ -62,7 +62,7 @@ class SearchControllerIntegrationTest {
     @Test
     void searchSemantic_shouldReturnResults_fromDatabase() throws Exception {
         // Given
-        SearchRequest request = new SearchRequest("java programming", 5, null);
+        SearchRequest request = new SearchRequest("java programming", 5, null, null);
 
         // When & Then
         mockMvc.perform(post(SEARCH_SEMANTIC_PATH)
@@ -86,7 +86,7 @@ class SearchControllerIntegrationTest {
     @Test
     void searchSemantic_shouldRespectLimit() throws Exception {
         // Given
-        SearchRequest request = new SearchRequest("test query", 2, null);
+        SearchRequest request = new SearchRequest("test query", 2, null, null);
 
         // When & Then
         mockMvc.perform(post(SEARCH_SEMANTIC_PATH)
@@ -101,7 +101,7 @@ class SearchControllerIntegrationTest {
         // Given
         testDataLoader.cleanDatabase();
 
-        SearchRequest request = new SearchRequest("nonexistent query", 10, null);
+        SearchRequest request = new SearchRequest("nonexistent query", 10, null, null);
 
         // When & Then
         mockMvc.perform(post(SEARCH_SEMANTIC_PATH)

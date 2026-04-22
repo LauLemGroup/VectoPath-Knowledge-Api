@@ -5,63 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.UUID;
 
-public class SearchRequest {
+public record SearchRequest(
+        @JsonProperty(value = "query") String query,
+        @JsonProperty(value = "limit", defaultValue = "10") Integer limit,
+        @JsonProperty(value = "min_similarity", defaultValue = "0.50") Double minSimilarity,
+        @JsonProperty("resource_ids") List<UUID> resourceIds
+) {
+    private static final int DEFAULT_LIMIT = 10;
+    private static final double DEFAULT_MIN_SIMILARITY = 0.5;
 
-    @JsonProperty("query")
-    private String query;
-
-    @JsonProperty(value = "limit", defaultValue = "10")
-    private int limit = 10;
-
-    @JsonProperty(value = "min_similarity", defaultValue = "0.50")
-    private double minSimilarity = 0.5;
-
-    @JsonProperty("resource_ids")
-    private List<UUID> resourceIds;
-
-    public SearchRequest() {
-    }
-
-    public SearchRequest(String query, Integer limit, Double minSimilarity) {
-        this.query = query;
-        if (limit != null) {
-            this.limit = limit;
-        }
-
-        if (minSimilarity != null) {
-            this.minSimilarity = minSimilarity;
-        }
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public int getLimit() {
-        return limit;
-    }
-
-    public void setLimit(int limit) {
-        this.limit = limit;
-    }
-
-    public double getMinSimilarity() {
-        return minSimilarity;
-    }
-
-    public void setMinSimilarity(double minSimilarity) {
-        this.minSimilarity = minSimilarity;
-    }
-
-    public List<UUID> getResourceIds() {
-        return resourceIds;
-    }
-
-    public void setResourceIds(List<UUID> resourceIds) {
-        this.resourceIds = resourceIds;
+    public SearchRequest {
+        if (limit == null || limit <= 0) limit = DEFAULT_LIMIT;
+        if (minSimilarity == null || minSimilarity < 0 || minSimilarity > 0) minSimilarity = DEFAULT_MIN_SIMILARITY;
     }
 }
