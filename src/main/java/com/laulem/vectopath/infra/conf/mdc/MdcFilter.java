@@ -1,6 +1,6 @@
 package com.laulem.vectopath.infra.conf.mdc;
 
-import com.laulem.vectopath.shared.tool.UserTools;
+import com.laulem.vectopath.shared.util.UserUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +38,7 @@ public class MdcFilter extends OncePerRequestFilter {
 
     private void populateMdc(HttpServletRequest request) {
         MDC.put(MDCConstant.TRANSACTION_ID, UUID.randomUUID().toString());
-        MDC.put(MDCConstant.TRANSACTION_IP, UserTools.getIpAddr(request));
+        MDC.put(MDCConstant.TRANSACTION_IP, UserUtils.getIpAddr(request));
         MDC.put(MDCConstant.TRANSACTION_PATH, request.getRequestURI());
         MDC.put(MDCConstant.TRANSACTION_QUERY, request.getQueryString());
         MDC.put(MDCConstant.TRANSACTION_STATUS, "");

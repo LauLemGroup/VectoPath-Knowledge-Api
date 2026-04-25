@@ -10,14 +10,11 @@ import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.business.service.RoleValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
-@Service
 public class ResourceServiceImpl implements ResourceService {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceServiceImpl.class);

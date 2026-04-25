@@ -1,6 +1,6 @@
 package com.laulem.vectopath.infra.conf.mdc;
 
-import com.laulem.vectopath.shared.tool.UserTools;
+import com.laulem.vectopath.shared.util.UserUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +14,7 @@ public class MdcUserFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        MDC.put(MDCConstant.TRANSACTION_USER, UserTools.getUsername());
+        MDC.put(MDCConstant.TRANSACTION_USER, UserUtils.getUsername());
 
         filterChain.doFilter(request, response);
     }

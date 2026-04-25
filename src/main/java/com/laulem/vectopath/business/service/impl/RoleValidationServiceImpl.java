@@ -4,12 +4,10 @@ import com.laulem.vectopath.business.exception.ParamException;
 import com.laulem.vectopath.business.model.SecurityConfig;
 import com.laulem.vectopath.business.service.AuthenticationService;
 import com.laulem.vectopath.business.service.RoleValidationService;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
+import com.laulem.vectopath.shared.util.CollectionUtils;
 
 import java.util.List;
 
-@Service
 public class RoleValidationServiceImpl implements RoleValidationService {
     private final AuthenticationService authenticationService;
     private final SecurityConfig securityConfig;

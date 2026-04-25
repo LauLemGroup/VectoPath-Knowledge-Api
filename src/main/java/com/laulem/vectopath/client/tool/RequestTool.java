@@ -2,7 +2,7 @@ package com.laulem.vectopath.client.tool;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.laulem.vectopath.shared.tool.UserTools;
+import com.laulem.vectopath.shared.util.UserUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
@@ -39,7 +39,7 @@ public class RequestTool {
         Map<String, String> result = new HashMap<>();
         result.put("URL", httpRequest.getRequestURL().toString());
         result.put("URI", httpRequest.getRequestURI());
-        result.put("IP", UserTools.getIpAddr(httpRequest));
+        result.put("IP", UserUtils.getIpAddr(httpRequest));
         result.put("QUERY", httpRequest.getQueryString());
         result.put("METHOD", httpRequest.getMethod());
 
