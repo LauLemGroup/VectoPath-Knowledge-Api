@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -179,6 +180,43 @@ class ResourceControllerIntegrationTest {
         // When & Then
         mockMvc.perform(delete(RESOURCES_PATH + "/" + nonExistentId))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void renameResource_shouldUpdateName_whenResourceExists() throws Exception {
+        // Given
+        String resourceId = "550e8400-e29b-41d4-a716-446655440000";
+        String newName = "updated-resource-name";
+
+        // When & Then
+        mockMvc.perform(patch(RESOURCES_PATH + "/" + resourceId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"" + newName + "\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void renameResource_shouldReturn404_whenResourceNotExists() throws Exception {
+        // Given
+        String nonExistentId = "00000000-0000-0000-0000-000000000000";
+
+        // When & Then
+        mockMvc.perform(patch(RESOURCES_PATH + "/" + nonExistentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"new-name\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void renameResource_shouldReturn400_whenNameIsBlank() throws Exception {
+        // Given
+        String resourceId = "550e8400-e29b-41d4-a716-446655440000";
+
+        // When & Then
+        mockMvc.perform(patch(RESOURCES_PATH + "/" + resourceId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"\"}"))
+                .andExpect(status().isBadRequest());
     }
 }
 

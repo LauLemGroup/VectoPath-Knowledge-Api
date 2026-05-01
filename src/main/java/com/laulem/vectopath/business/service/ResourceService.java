@@ -22,4 +22,6 @@ public interface ResourceService {
     void deleteResource(UUID id);
 
     Resource reprocessResource(UUID id);
+
+    void renameResource(UUID id, String newName);
 }

@@ -85,6 +85,11 @@ public class ResourceServiceImpl implements ResourceService {
         return resource;
     }
 
+    @Override
+    public void renameResource(UUID id, String newName) {
+        resourceRepository.updateName(id, newName);
+    }
+
     private Resource processResourceVectorization(Resource resource) {
         try {
             resource.setStatus(ResourceStatus.PROCESSING);

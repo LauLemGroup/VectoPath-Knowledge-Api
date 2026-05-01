@@ -5,6 +5,7 @@ import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
+import com.laulem.vectopath.client.dto.RenameResourceRequest;
 import com.laulem.vectopath.client.dto.ResourceResponse;
 import com.laulem.vectopath.client.service.ResourceCreationService;
 import com.laulem.vectopath.infra.conf.security.SecurityExpressions;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -114,6 +116,14 @@ public class ResourceController {
     public ResourceResponse reprocessResource(@PathVariable UUID id) {
         logger.info("Reprocessing resource: {}", id);
         return new ResourceResponse(resourceService.reprocessResource(id));
+    }
+
+    @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)
+    @PatchMapping("/{id}")
+    public void renameResource(@PathVariable UUID id,
+                                           @RequestBody @Validated RenameResourceRequest request) {
+        logger.info("Renaming resource {} to: {}", id, request.name());
+        resourceService.renameResource(id, request.name());
     }
 
     @PreAuthorize(SecurityExpressions.RESOURCES_DELETE)

@@ -1,5 +1,6 @@
 package com.laulem.vectopath.infra.repository;
 
+import com.laulem.vectopath.business.exception.NotFoundException;
 import com.laulem.vectopath.business.model.Resource;
 import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.repository.ResourceRepository;
@@ -9,6 +10,7 @@ import com.laulem.vectopath.infra.entity.RoleEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -125,5 +127,16 @@ public class ResourceRepositoryImpl implements ResourceRepository {
     @Transactional
     public void updateStatus(Resource resource) {
         jpaRepository.updateStatus(resource.getId(), resource.getStatus());
+    }
+
+    @Override
+    @Transactional
+    public void updateName(UUID id, String newName) {
+        ResourceEntity resource = jpaRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Resource", id.toString()));
+
+        resource.setUpdatedAt(LocalDateTime.now());
+        resource.setName(newName);
+        jpaRepository.save(resource);
     }
 }

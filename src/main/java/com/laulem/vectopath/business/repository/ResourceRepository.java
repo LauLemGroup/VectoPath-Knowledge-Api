@@ -27,4 +27,6 @@ public interface ResourceRepository {
     void deleteById(UUID id);
 
     void updateStatus(Resource resource);
+
+    void updateName(UUID id, String newName);
 }
