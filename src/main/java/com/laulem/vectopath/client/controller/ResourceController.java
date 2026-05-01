@@ -6,6 +6,7 @@ import com.laulem.vectopath.business.model.ResourceStatus;
 import com.laulem.vectopath.business.service.ResourceService;
 import com.laulem.vectopath.client.dto.CreateResourceRequest;
 import com.laulem.vectopath.client.dto.RenameResourceRequest;
+import com.laulem.vectopath.client.dto.ResourceContentResponse;
 import com.laulem.vectopath.client.dto.ResourceResponse;
 import com.laulem.vectopath.client.service.ResourceCreationService;
 import com.laulem.vectopath.infra.conf.security.SecurityExpressions;
@@ -109,6 +110,16 @@ public class ResourceController {
                 .stream()
                 .map(ResourceResponse::new)
                 .toList();
+    }
+
+    @PreAuthorize(SecurityExpressions.RESOURCES_READ)
+    @GetMapping("/{id}/content")
+    public ResourceContentResponse getResourceContent(@PathVariable UUID id) {
+        logger.info("Retrieving content for resource: {}", id);
+
+        return resourceService.getResourceById(id)
+                .map(ResourceContentResponse::new)
+                .orElseThrow(() -> new NotFoundException("Resource", id.toString()));
     }
 
     @PreAuthorize(SecurityExpressions.RESOURCES_WRITE)

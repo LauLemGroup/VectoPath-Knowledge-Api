@@ -183,6 +183,30 @@ class ResourceControllerIntegrationTest {
     }
 
     @Test
+    void getResourceContent_shouldReturnContent_whenResourceExists() throws Exception {
+        // Given
+        String resourceId = "550e8400-e29b-41d4-a716-446655440000";
+
+        // When & Then
+        mockMvc.perform(get(RESOURCES_PATH + "/" + resourceId + "/content"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id", is(resourceId)))
+                .andExpect(jsonPath("$.name", is("test")))
+                .andExpect(jsonPath("$.content", notNullValue()));
+    }
+
+    @Test
+    void getResourceContent_shouldReturn404_whenResourceNotExists() throws Exception {
+        // Given
+        String nonExistentId = "00000000-0000-0000-0000-000000000000";
+
+        // When & Then
+        mockMvc.perform(get(RESOURCES_PATH + "/" + nonExistentId + "/content"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void renameResource_shouldUpdateName_whenResourceExists() throws Exception {
         // Given
         String resourceId = "550e8400-e29b-41d4-a716-446655440000";
